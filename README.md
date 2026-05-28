@@ -65,3 +65,9 @@ assets/daf/001.png
 - `assets/daf/` — תמונות הדף לפי מספר שיעור, למשל `001.webp`.
 - `assets/css/` — קובצי עיצוב.
 - `assets/js/` — קובצי JavaScript.
+
+
+## אייקונים וקיצור למסך הבית
+
+נוספו קובצי אייקון ב־`assets/icons/` וקובץ `manifest.webmanifest`, כדי שקיצור דרך בנייד יוצג עם סמל ושם מסודר.
+

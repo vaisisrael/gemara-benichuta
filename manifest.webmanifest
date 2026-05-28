@@ -1,0 +1,26 @@
+{
+  "name": "גמרא למתחילים בניחותא",
+  "short_name": "גמרא בניחותא",
+  "description": "לימוד תלמוד וגמרא מן המקור — צעד אחר צעד, בלי רקע ישיבתי.",
+  "start_url": "/gemara-benichuta/he/",
+  "scope": "/gemara-benichuta/",
+  "display": "standalone",
+  "dir": "rtl",
+  "lang": "he",
+  "theme_color": "#3F5F4A",
+  "background_color": "#FAF7F0",
+  "icons": [
+    {
+      "src": "/gemara-benichuta/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/gemara-benichuta/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
