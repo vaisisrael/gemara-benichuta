@@ -1,1 +1,114 @@
-:root{ --bg:#FAF7F0; --text:#1F2933; --muted:#5C6673; --brand:#3F5F4A; --brand-dark:#2F4638; --gold:#C9A86A; --box:#F3E8D0; --source:#F7EFE2; --source-text:#2A2420; --white:#FFFDF8; --max:720px; --radius:22px; } *{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans Hebrew",system-ui,sans-serif;font-size:20px;line-height:1.85} a{color:var(--brand-dark);text-decoration:none} a:hover{text-decoration:underline} .site-header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:16px clamp(18px,4vw,48px);background:rgba(250,247,240,.95);backdrop-filter:blur(8px);border-bottom:1px solid rgba(63,95,74,.16)} .brand{display:flex;flex-direction:column;text-decoration:none}.brand-title{font-family:"Frank Ruhl Libre",serif;font-weight:700;font-size:26px;color:var(--brand-dark);line-height:1.1}.brand-subtitle{font-size:14px;color:var(--muted);line-height:1.35}.main-nav{display:flex;gap:18px;align-items:center;font-size:17px}.main-nav a{padding:4px 0;border-bottom:2px solid transparent}.main-nav a.active{border-color:var(--gold);font-weight:700}.menu-toggle{display:none;border:1px solid rgba(63,95,74,.25);background:var(--white);border-radius:999px;padding:7px 14px;font:inherit;font-size:16px;color:var(--brand-dark)} .page{width:min(1100px,100%);margin:0 auto;padding:72px 24px}.narrow-page{max-width:var(--max)}.hero{max-width:760px;margin-inline:auto;text-align:center;padding-block:44px}.eyebrow{font-size:17px;color:var(--brand);font-weight:700}.hero h1,.page h1,.lesson-article h1{font-family:"Frank Ruhl Libre",serif;line-height:1.15;color:var(--brand-dark)}.hero h1{font-size:clamp(42px,7vw,72px);margin:.2em 0}.page h1,.lesson-article h1{font-size:clamp(34px,5vw,46px);margin:.15em 0 .7em}.lead{font-size:24px;line-height:1.7;color:#344054}.lead.small{font-size:21px}.hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:32px}.button{border-radius:999px;padding:12px 22px;font-weight:700}.button.primary{background:var(--brand-dark);color:white}.button.secondary{background:var(--box);color:var(--brand-dark)}.cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:32px}.card,.lesson-row{background:var(--white);border:1px solid rgba(63,95,74,.14);border-radius:var(--radius);padding:22px;box-shadow:0 10px 30px rgba(31,41,51,.06);text-decoration:none}.card{display:flex;flex-direction:column;gap:8px}.card span{font-size:17px;color:var(--muted);line-height:1.55}.lesson-list{display:grid;gap:14px}.lesson-row{display:grid;grid-template-columns:72px 1fr;gap:8px 18px;align-items:center}.lesson-number{grid-row:span 2;display:grid;place-items:center;background:var(--source);border-radius:18px;font-weight:700;color:var(--brand-dark);min-height:64px}.lesson-title{font-weight:700;font-size:22px}.lesson-desc{font-size:17px;color:var(--muted)} .lesson-layout{display:grid;grid-template-columns:minmax(180px,250px) minmax(0,var(--max));gap:52px;justify-content:center;align-items:start;padding:44px 24px 72px}.lesson-toc{position:sticky;top:104px;font-size:16px}.lesson-toc details{background:var(--white);border:1px solid rgba(63,95,74,.16);border-radius:18px;padding:14px}.lesson-toc summary{cursor:pointer;font-weight:700;color:var(--brand-dark)}.lesson-toc nav{display:flex;flex-direction:column;gap:4px;margin-top:10px}.lesson-toc a{padding:6px 2px;color:var(--muted)}.lesson-article{min-width:0;background:var(--white);padding:clamp(24px,5vw,54px);border-radius:28px;box-shadow:0 14px 50px rgba(31,41,51,.08)}.lesson-kicker{font-weight:700;color:var(--brand);margin:0}.lesson-section{scroll-margin-top:110px;margin-top:38px}.lesson-section h2{font-family:"Frank Ruhl Libre",serif;color:var(--brand-dark);font-size:clamp(26px,4vw,32px);line-height:1.25;margin:0 0 14px;border-top:1px solid rgba(201,168,106,.45);padding-top:28px}.lesson-article p{margin:0 0 1.05em}.source-quote{margin:26px 0;padding:22px 26px;background:var(--source);border-right:5px solid var(--gold);border-radius:18px;color:var(--source-text);font-family:"Frank Ruhl Libre",serif;font-size:24px;line-height:2}.source-quote p{margin:.15em 0}.question{background:var(--bg);border-radius:16px;padding:12px 16px}.question span{font-weight:700;color:var(--brand)}.daf-card{background:var(--bg);border:1px solid rgba(201,168,106,.55);border-radius:20px;padding:16px;margin:10px 0 28px}.daf-card img{width:100%;height:auto;border-radius:14px;background:#eee}.daf-card figcaption{font-size:16px;color:var(--muted);line-height:1.6}.daf-card .missing-note{display:none;font-size:16px;color:var(--muted);margin:0}.daf-card.is-missing picture,.daf-card.is-missing figcaption{display:none}.daf-card.is-missing .missing-note{display:block}.lesson-bottom-nav{display:flex;justify-content:space-between;gap:16px;margin-top:42px;padding-top:22px;border-top:1px solid rgba(63,95,74,.16);font-size:17px}.lesson-bottom-nav span{color:var(--muted)}.plain-list{padding-inline-start:1.3em}.site-footer{text-align:center;padding:28px 20px;color:var(--muted);font-size:15px;border-top:1px solid rgba(63,95,74,.12)}.site-footer p{margin:.2em 0}.site-footer p + p{display:none!important} @media (max-width:850px){body{font-size:19px;line-height:1.82}.site-header{align-items:flex-start}.menu-toggle{display:block}.main-nav{display:none;position:absolute;inset-inline:16px;top:76px;flex-direction:column;align-items:stretch;background:var(--white);border:1px solid rgba(63,95,74,.16);border-radius:20px;padding:14px;box-shadow:0 12px 40px rgba(31,41,51,.12)}.main-nav.is-open{display:flex}.brand-subtitle{display:none}.cards-grid{grid-template-columns:1fr}.lesson-layout{display:block;padding:20px 14px 48px}.lesson-toc{position:fixed;right:14px;left:14px;bottom:14px;z-index:1000;margin:0;font-size:16px;pointer-events:none}.lesson-toc details{pointer-events:auto;background:var(--white);border:1px solid rgba(63,95,74,.18);border-radius:999px;box-shadow:0 10px 34px rgba(31,41,51,.20);overflow:hidden}.lesson-toc summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 16px;list-style:none;cursor:pointer;font-weight:700;color:var(--brand-dark)}.lesson-toc summary::after{content:"פתח";font-size:13px;font-weight:700;color:var(--muted);background:var(--bg);border-radius:999px;padding:2px 10px}.lesson-toc summary::-webkit-details-marker{display:none}.lesson-toc details[open]{border-radius:20px}.lesson-toc details[open] summary{border-bottom:1px solid rgba(63,95,74,.14)}.lesson-toc details[open] summary::after{content:"סגור"}.lesson-toc nav{max-height:46vh;overflow:auto;padding:8px 16px 14px;background:var(--white)}.lesson-toc a{display:block;padding:9px 2px;color:var(--muted);border-bottom:1px solid rgba(63,95,74,.08)}.lesson-toc a:last-child{border-bottom:0}.lesson-article{padding-bottom:88px}.lesson-article{padding:24px 18px 90px;border-radius:22px}.source-quote{font-size:22px;padding:18px}.lesson-bottom-nav{flex-direction:column}.lesson-row{grid-template-columns:58px 1fr}.lesson-number{min-height:58px}.hero{text-align:right}.hero-actions{justify-content:flex-start}}
+:root{
+  --bg:#FAF7F0;
+  --text:#1F2933;
+  --muted:#5C6673;
+  --brand:#3F5F4A;
+  --brand-dark:#2F4638;
+  --gold:#C9A86A;
+  --box:#F3E8D0;
+  --source:#F7EFE2;
+  --source-text:#2A2420;
+  --white:#FFFDF8;
+  --max:720px;
+  --radius:22px;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans Hebrew",system-ui,sans-serif;font-size:20px;line-height:1.85}
+a{color:var(--brand-dark);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.site-header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:16px clamp(18px,4vw,48px);background:rgba(250,247,240,.95);backdrop-filter:blur(8px);border-bottom:1px solid rgba(63,95,74,.16)}
+.brand{display:flex;flex-direction:column;text-decoration:none}
+.brand-title{font-family:"Frank Ruhl Libre",serif;font-weight:700;font-size:26px;color:var(--brand-dark);line-height:1.1}
+.brand-subtitle{font-size:14px;color:var(--muted);line-height:1.35}
+.main-nav{display:flex;gap:18px;align-items:center;font-size:17px}
+.main-nav a{padding:4px 0;border-bottom:2px solid transparent}
+.main-nav a.active{border-color:var(--gold);font-weight:700}
+.menu-toggle{display:none;border:1px solid rgba(63,95,74,.25);background:var(--white);border-radius:999px;padding:7px 14px;font:inherit;font-size:16px;color:var(--brand-dark)}
+
+.page{width:min(1100px,100%);margin:0 auto;padding:72px 24px}
+.narrow-page{max-width:var(--max)}
+.hero{max-width:760px;margin-inline:auto;text-align:center;padding-block:44px}
+.eyebrow{font-size:17px;color:var(--brand);font-weight:700}
+.hero h1,.page h1,.lesson-article h1{font-family:"Frank Ruhl Libre",serif;line-height:1.15;color:var(--brand-dark)}
+.hero h1{font-size:clamp(42px,7vw,72px);margin:.2em 0}
+.page h1,.lesson-article h1{font-size:clamp(34px,5vw,46px);margin:.15em 0 .7em}
+.lead{font-size:24px;line-height:1.7;color:#344054}
+.lead.small{font-size:21px}
+.hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+.button{border-radius:999px;padding:12px 22px;font-weight:700}
+.button.primary{background:var(--brand-dark);color:white}
+.button.secondary{background:var(--box);color:var(--brand-dark)}
+.cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:32px}
+.card,.lesson-row{background:var(--white);border:1px solid rgba(63,95,74,.14);border-radius:var(--radius);padding:22px;box-shadow:0 10px 30px rgba(31,41,51,.06);text-decoration:none}
+.card{display:flex;flex-direction:column;gap:8px}
+.card span{font-size:17px;color:var(--muted);line-height:1.55}
+.lesson-list{display:grid;gap:14px}
+.lesson-row{display:grid;grid-template-columns:72px 1fr;gap:8px 18px;align-items:center}
+.lesson-number{grid-row:span 2;display:grid;place-items:center;background:var(--source);border-radius:18px;font-weight:700;color:var(--brand-dark);min-height:64px}
+.lesson-title{font-weight:700;font-size:22px}
+.lesson-desc{font-size:17px;color:var(--muted)}
+
+.lesson-layout{display:grid;grid-template-columns:minmax(180px,250px) minmax(0,var(--max));gap:52px;justify-content:center;align-items:start;padding:44px 24px 72px}
+.lesson-toc{position:sticky;top:104px;font-size:16px}
+.lesson-toc details{background:var(--white);border:1px solid rgba(63,95,74,.16);border-radius:18px;padding:14px}
+.lesson-toc summary{cursor:pointer;font-weight:700;color:var(--brand-dark)}
+.lesson-toc nav{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.lesson-toc a{padding:6px 2px;color:var(--muted);border-radius:10px}
+.lesson-toc a.is-active{color:var(--brand-dark);font-weight:700;background:rgba(201,168,106,.20);padding-inline:8px;text-decoration:none}
+
+.lesson-article{min-width:0;background:var(--white);padding:clamp(24px,5vw,54px);border-radius:28px;box-shadow:0 14px 50px rgba(31,41,51,.08)}
+.lesson-kicker{font-weight:700;color:var(--brand);margin:0}
+.lesson-article h1{scroll-margin-top:130px}
+.lesson-section{scroll-margin-top:130px;margin-top:38px}
+.lesson-section h2{font-family:"Frank Ruhl Libre",serif;color:var(--brand-dark);font-size:clamp(26px,4vw,32px);line-height:1.25;margin:0 0 14px;border-top:1px solid rgba(201,168,106,.45);padding-top:28px}
+.lesson-article p{margin:0 0 1.05em}
+.source-quote{margin:26px 0;padding:22px 26px;background:var(--source);border-right:5px solid var(--gold);border-radius:18px;color:var(--source-text);font-family:"Frank Ruhl Libre",serif;font-size:24px;line-height:2}
+.source-quote p{margin:.15em 0}
+.question{background:var(--bg);border-radius:16px;padding:12px 16px}
+.question span{font-weight:700;color:var(--brand)}
+.daf-card{background:var(--bg);border:1px solid rgba(201,168,106,.55);border-radius:20px;padding:16px;margin:10px 0 28px}
+.daf-card img{width:100%;height:auto;border-radius:14px;background:#eee}
+.daf-card figcaption{font-size:16px;color:var(--muted);line-height:1.6}
+.daf-card .missing-note{display:none;font-size:16px;color:var(--muted);margin:0}
+.daf-card.is-missing picture,.daf-card.is-missing figcaption{display:none}
+.daf-card.is-missing .missing-note{display:block}
+.lesson-bottom-nav{display:flex;justify-content:space-between;gap:16px;margin-top:42px;padding-top:22px;border-top:1px solid rgba(63,95,74,.16);font-size:17px}
+.lesson-bottom-nav span{color:var(--muted)}
+.plain-list{padding-inline-start:1.3em}
+.site-footer{text-align:center;padding:28px 20px;color:var(--muted);font-size:15px;border-top:1px solid rgba(63,95,74,.12)}
+.site-footer p{margin:.2em 0}
+.site-footer p:not(:first-child){display:none}
+
+@media (max-width:850px){
+  body{font-size:19px;line-height:1.82}
+  .site-header{align-items:flex-start}
+  .menu-toggle{display:block}
+  .main-nav{display:none;position:absolute;inset-inline:16px;top:76px;flex-direction:column;align-items:stretch;background:var(--white);border:1px solid rgba(63,95,74,.16);border-radius:20px;padding:14px;box-shadow:0 12px 40px rgba(31,41,51,.12)}
+  .main-nav.is-open{display:flex}
+  .brand-subtitle{display:none}
+  .cards-grid{grid-template-columns:1fr}
+  .lesson-layout{display:block;padding:20px 14px 48px}
+  .lesson-article{padding:24px 18px 96px;border-radius:22px}
+  .lesson-article h1{scroll-margin-top:96px}
+  .lesson-section{scroll-margin-top:96px}
+  .lesson-toc{position:fixed;right:14px;left:14px;bottom:14px;z-index:40;margin:0;font-size:16px;pointer-events:none}
+  .lesson-toc details{pointer-events:auto;padding:0;border-radius:999px;box-shadow:0 12px 36px rgba(31,41,51,.20);overflow:hidden;background:rgba(255,253,248,.98)}
+  .lesson-toc summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 16px;list-style:none}
+  .lesson-toc summary::-webkit-details-marker{display:none}
+  .lesson-toc summary::after{content:"פתח";font-size:13px;font-weight:700;color:var(--brand);background:var(--box);border-radius:999px;padding:3px 10px}
+  .lesson-toc details[open]{border-radius:20px}
+  .lesson-toc details[open] summary{border-bottom:1px solid rgba(63,95,74,.14)}
+  .lesson-toc details[open] summary::after{content:"סגור"}
+  .lesson-toc nav{max-height:42vh;overflow:auto;padding:8px 14px 12px;margin-top:0;gap:2px}
+  .lesson-toc a{display:block;padding:7px 8px;color:var(--muted)}
+  .lesson-toc a.is-active{background:rgba(201,168,106,.28);color:var(--brand-dark);font-weight:700}
+  .source-quote{font-size:22px;padding:18px}
+  .lesson-bottom-nav{flex-direction:column}
+  .lesson-row{grid-template-columns:58px 1fr}
+  .lesson-number{min-height:58px}
+  .hero{text-align:right}
+  .hero-actions{justify-content:flex-start}
+}
