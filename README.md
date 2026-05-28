@@ -42,3 +42,26 @@ assets/daf/001.png
 ## הערה
 
 זהו שלב 1 בלבד: שלד האתר והמבנה הבסיסי. בשלב הבא נכון לעבור לשפה חזותית וקריאות, ואז למערכת תוכן לשיעורים.
+
+
+## התאמה ל־GitHub Pages
+
+הקבצים בחבילה זו מותאמים לריפוזיטורי בשם:
+
+`gemara-benichuta`
+
+ולכן נתיבי האתר מתחילים ב־:
+
+`/gemara-benichuta/`
+
+כתובת האתר בעברית תהיה:
+
+`https://vaisisrael.github.io/gemara-benichuta/he/`
+
+## תיקיות חשובות
+
+- `content/lessons/` — קובצי מקור Markdown של השיעורים.
+- `he/lessons/` — דפי HTML של השיעורים בעברית.
+- `assets/daf/` — תמונות הדף לפי מספר שיעור, למשל `001.webp`.
+- `assets/css/` — קובצי עיצוב.
+- `assets/js/` — קובצי JavaScript.

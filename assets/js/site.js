@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.daf-card[data-daf-image]').forEach((card) => {
     const name = card.dataset.dafImage;
     const alt = card.dataset.dafAlt || '';
-    const candidates = [`/assets/daf/${name}.webp`, `/assets/daf/${name}.png`];
+    const candidates = [`/gemara-benichuta/assets/daf/${name}.webp`, `/gemara-benichuta/assets/daf/${name}.png`];
     const figure = card.querySelector('figure');
 
     const tryImage = (index) => {
