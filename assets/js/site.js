@@ -1,8 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.site-footer p').forEach((paragraph) => {
-    if (paragraph.textContent.includes('/en/')) {
-      paragraph.remove();
-    }
+  /* הסרת הערת תכנון פנימית מן הפוטר, אם נשארה בדפי HTML ישנים */
+  document.querySelectorAll('.site-footer').forEach((footer) => {
+    footer.querySelectorAll('p').forEach((paragraph, index) => {
+      const text = paragraph.textContent || '';
+      if (index > 0 || text.includes('/en/') || text.includes('אנגלית') || text.includes('English')) {
+        paragraph.remove();
+      }
+    });
   });
 
   const btn = document.querySelector('.menu-toggle');
@@ -15,17 +19,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const lessonTocDetails = document.querySelector('.lesson-toc details');
+  /* סגירה אמינה של ניווט השיעור הצף אחרי בחירת סעיף במובייל */
+  document.addEventListener('click', (event) => {
+    const lessonLink = event.target.closest('.lesson-toc a');
 
-  if (lessonTocDetails) {
-    lessonTocDetails.querySelectorAll('a').forEach((link) => {
-      link.addEventListener('click', () => {
-        if (window.matchMedia('(max-width: 850px)').matches) {
-          lessonTocDetails.removeAttribute('open');
-        }
-      });
-    });
-  }
+    if (!lessonLink || !window.matchMedia('(max-width: 850px)').matches) {
+      return;
+    }
+
+    const details = lessonLink.closest('details');
+
+    if (details) {
+      details.open = false;
+      details.removeAttribute('open');
+      lessonLink.blur();
+
+      /* גיבוי למקרה שהדפדפן פותח מחדש בזמן קפיצה לעוגן */
+      window.setTimeout(() => {
+        details.open = false;
+        details.removeAttribute('open');
+      }, 60);
+    }
+  });
 
   document.querySelectorAll('.daf-card[data-daf-image]').forEach((card) => {
     const name = card.dataset.dafImage;
@@ -36,6 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     const figure = card.querySelector('figure');
+
+    if (!figure) {
+      return;
+    }
 
     const tryImage = (index) => {
       if (index >= candidates.length) {
