@@ -85,90 +85,6 @@ a:hover{text-decoration:underline}
 .site-footer p{margin:.2em 0}
 .site-footer p:not(:first-child){display:none}
 
-@media (max-width:850px){
-  body{font-size:19px;line-height:1.82}
-  .site-header{align-items:flex-start}
-  .menu-toggle{display:block}
-  .main-nav{display:none;position:absolute;inset-inline:16px;top:76px;flex-direction:column;align-items:stretch;background:var(--white);border:1px solid rgba(63,95,74,.16);border-radius:20px;padding:14px;box-shadow:0 12px 40px rgba(31,41,51,.12)}
-  .main-nav.is-open{display:flex}
-  .brand-subtitle{display:none}
-  .cards-grid{grid-template-columns:1fr}
-  .lesson-layout{display:block;padding:20px 14px 48px}
-  .lesson-article{padding:24px 18px 96px;border-radius:22px}
-  .lesson-article h1{scroll-margin-top:96px}
-  .lesson-section{scroll-margin-top:96px}
-
-  /* Mobile lesson navigation: small floating button when closed, panel only when open */
-  .lesson-toc{
-    position:fixed;
-    right:16px;
-    left:auto;
-    bottom:18px;
-    z-index:40;
-    margin:0;
-    font-size:16px;
-    pointer-events:none;
-    width:auto;
-  }
-
-  .lesson-toc.is-open{
-    right:14px;
-    left:14px;
-    width:auto;
-  }
-
-  .lesson-toc details{
-    pointer-events:auto;
-    padding:0;
-    border-radius:999px;
-    box-shadow:0 12px 36px rgba(31,41,51,.20);
-    overflow:hidden;
-    background:rgba(255,253,248,.98);
-    width:max-content;
-    max-width:calc(100vw - 32px);
-  }
-
-  .lesson-toc details[open]{
-    width:100%;
-    border-radius:20px;
-  }
-
-  .lesson-toc summary{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    padding:11px 16px;
-    list-style:none;
-    font-size:0;
-  }
-
-  .lesson-toc summary::-webkit-details-marker{display:none}
-  .lesson-toc summary::before{content:"ניווט";font-size:16px;font-weight:700;color:var(--brand-dark)}
-  .lesson-toc summary::after{content:"פתח";font-size:13px;font-weight:700;color:var(--brand);background:var(--box);border-radius:999px;padding:3px 10px}
-  .lesson-toc details[open] summary{border-bottom:1px solid rgba(63,95,74,.14)}
-  .lesson-toc details[open] summary::before{content:"בתוך השיעור"}
-  .lesson-toc details[open] summary::after{content:"סגור"}
-
-  .lesson-toc nav{
-    max-height:42vh;
-    overflow:auto;
-    padding:8px 14px 12px;
-    margin-top:0;
-    gap:2px;
-  }
-
-  .lesson-toc a{display:block;padding:7px 8px;color:var(--muted)}
-  .lesson-toc a.is-active{background:rgba(201,168,106,.28);color:var(--brand-dark);font-weight:700}
-
-  .source-quote{font-size:22px;padding:18px}
-  .lesson-bottom-nav{flex-direction:column}
-  .lesson-row{grid-template-columns:58px 1fr}
-  .lesson-number{min-height:58px}
-  .hero{text-align:right}
-  .hero-actions{justify-content:flex-start}
-}
-
 /* Brand icon in the site header, using the existing favicon/app icon */
 .brand{
   position:relative;
@@ -191,14 +107,172 @@ a:hover{text-decoration:underline}
 }
 
 @media (max-width:850px){
+  body{font-size:19px;line-height:1.82}
+  .site-header{align-items:flex-start}
+  .menu-toggle{display:block}
+  .main-nav{display:none;position:absolute;inset-inline:16px;top:76px;flex-direction:column;align-items:stretch;background:var(--white);border:1px solid rgba(63,95,74,.16);border-radius:20px;padding:14px;box-shadow:0 12px 40px rgba(31,41,51,.12)}
+  .main-nav.is-open{display:flex}
+  .brand-subtitle{display:none}
   .brand{
     padding-inline-start:42px;
     min-height:38px;
   }
-
   .brand::before{
     width:32px;
     height:32px;
     border-radius:10px;
   }
+
+  .cards-grid{grid-template-columns:1fr}
+  .lesson-layout{display:block;padding:20px 14px 48px}
+  .lesson-article{padding:24px 18px 76px;border-radius:22px}
+  .lesson-article h1{scroll-margin-top:96px}
+  .lesson-section{scroll-margin-top:96px}
+
+  /*
+    Mobile lesson navigation:
+    - closed state: a small "בתוך השיעור" button at bottom
+    - open state: right-side drawer
+    - no automatic open on lesson load
+  */
+  .lesson-toc{
+    position:fixed;
+    inset:0;
+    z-index:60;
+    margin:0;
+    font-size:16px;
+    pointer-events:none;
+  }
+
+  .lesson-toc::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:rgba(31,41,51,.28);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .18s ease;
+  }
+
+  .lesson-toc.is-open{
+    pointer-events:auto;
+  }
+
+  .lesson-toc.is-open::before{
+    opacity:1;
+    pointer-events:auto;
+  }
+
+  .lesson-toc details{
+    pointer-events:none;
+    padding:0;
+    margin:0;
+    border:0;
+    background:transparent;
+    box-shadow:none;
+    overflow:visible;
+  }
+
+  .lesson-toc details:not([open]){
+    position:fixed;
+    inset-inline-end:16px;
+    bottom:18px;
+    width:max-content;
+    max-width:calc(100vw - 32px);
+  }
+
+  .lesson-toc details:not([open]) summary{
+    pointer-events:auto;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    min-height:44px;
+    padding:10px 14px;
+    border:1px solid rgba(63,95,74,.20);
+    border-radius:999px;
+    background:rgba(255,253,248,.98);
+    box-shadow:0 10px 32px rgba(31,41,51,.20);
+    color:var(--brand-dark);
+    font-weight:700;
+    list-style:none;
+  }
+
+  .lesson-toc summary::-webkit-details-marker{display:none}
+
+  .lesson-toc details:not([open]) summary::after{
+    content:"☰";
+    font-size:17px;
+    line-height:1;
+    color:var(--brand);
+  }
+
+  .lesson-toc details[open]{
+    position:fixed;
+    inset-block:0;
+    inset-inline-start:0;
+    width:min(84vw,320px);
+    max-width:calc(100vw - 40px);
+    pointer-events:auto;
+    background:var(--white);
+    border-inline-end:1px solid rgba(63,95,74,.16);
+    box-shadow:-12px 0 36px rgba(31,41,51,.18);
+    transform:translateX(0);
+    overflow:hidden;
+  }
+
+  .lesson-toc details[open] summary{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:18px 18px 14px;
+    border-bottom:1px solid rgba(63,95,74,.14);
+    list-style:none;
+    color:var(--brand-dark);
+    font-weight:700;
+  }
+
+  .lesson-toc details[open] summary::after{
+    content:"×";
+    display:grid;
+    place-items:center;
+    width:32px;
+    height:32px;
+    border-radius:999px;
+    background:var(--box);
+    color:var(--brand-dark);
+    font-size:24px;
+    line-height:1;
+    font-weight:400;
+  }
+
+  .lesson-toc nav{
+    max-height:calc(100vh - 74px);
+    overflow:auto;
+    padding:10px 14px 18px;
+    margin-top:0;
+    gap:2px;
+  }
+
+  .lesson-toc a{
+    display:block;
+    padding:9px 10px;
+    color:var(--muted);
+    border-radius:12px;
+    line-height:1.45;
+  }
+
+  .lesson-toc a.is-active{
+    background:rgba(201,168,106,.26);
+    color:var(--brand-dark);
+    font-weight:700;
+    text-decoration:none;
+  }
+
+  .source-quote{font-size:22px;padding:18px}
+  .lesson-bottom-nav{flex-direction:column}
+  .lesson-row{grid-template-columns:58px 1fr}
+  .lesson-number{min-height:58px}
+  .hero{text-align:right}
+  .hero-actions{justify-content:flex-start}
 }
