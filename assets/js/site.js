@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Public footer should not display internal planning notes such as future /en/ support.
   document.querySelectorAll('.site-footer p').forEach((p, index) => {
     if (index > 0 || p.textContent.includes('/en/') || p.textContent.includes('אנגלית')) {
       p.remove();
@@ -20,10 +21,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const lessonTocNav = document.querySelector('.lesson-toc nav');
   const lessonTitle = document.querySelector('.lesson-article h1');
 
+  if (lessonTocDetails && lessonToc) {
+    lessonToc.classList.toggle('is-open', lessonTocDetails.open);
+    lessonTocDetails.addEventListener('toggle', () => {
+      lessonToc.classList.toggle('is-open', lessonTocDetails.open);
+      updateActiveTocLink();
+      keepActiveLinkVisible();
+    });
+  }
+
   if (lessonTocNav && lessonTitle) {
     lessonTitle.id = lessonTitle.id || 'lesson-top';
-
     const hasTopLink = lessonTocNav.querySelector('a[href="#lesson-top"]');
+
     if (!hasTopLink) {
       const topLink = document.createElement('a');
       topLink.href = '#lesson-top';
@@ -33,42 +43,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  const isMobile = () => window.matchMedia('(max-width: 850px)').matches;
+
   const getStickyOffset = () => {
     const header = document.querySelector('.site-header');
     const headerHeight = header ? header.getBoundingClientRect().height : 0;
     return headerHeight + 14;
   };
 
-  if (lessonToc) {
-    lessonToc.addEventListener('click', (event) => {
-      const link = event.target.closest('a[href^="#"]');
-      if (!link) return;
+  const getTocLinks = () => Array.from(document.querySelectorAll('.lesson-toc nav a[href^="#"]'));
 
-      const target = document.querySelector(link.getAttribute('href'));
-      if (!target) return;
-
-      event.preventDefault();
-
-      const targetY = target.getBoundingClientRect().top + window.scrollY - getStickyOffset();
-      window.scrollTo({ top: Math.max(targetY, 0), behavior: 'smooth' });
-
-      if (lessonTocDetails && window.matchMedia('(max-width: 850px)').matches) {
-        lessonTocDetails.removeAttribute('open');
-      }
-
-      history.replaceState(null, '', link.getAttribute('href'));
-    });
+  function getTargetForLink(link) {
+    const href = link.getAttribute('href');
+    if (!href || href === '#') return null;
+    try {
+      return document.querySelector(decodeURIComponent(href));
+    } catch (error) {
+      return document.querySelector(href);
+    }
   }
 
-  const updateActiveTocLink = () => {
-    const tocLinks = Array.from(document.querySelectorAll('.lesson-toc nav a[href^="#"]'));
+  function updateActiveTocLink() {
+    const tocLinks = getTocLinks();
     if (!tocLinks.length) return;
 
-    const offset = getStickyOffset() + 12;
+    const offset = getStickyOffset() + Math.min(140, window.innerHeight * 0.22);
     let activeLink = tocLinks[0];
 
     tocLinks.forEach((link) => {
-      const target = document.querySelector(link.getAttribute('href'));
+      const target = getTargetForLink(link);
       if (!target) return;
 
       if (target.getBoundingClientRect().top <= offset) {
@@ -77,12 +80,58 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     tocLinks.forEach((link) => link.classList.toggle('is-active', link === activeLink));
-  };
+  }
 
-  if (document.querySelector('.lesson-toc nav')) {
+  function keepActiveLinkVisible() {
+    if (!lessonTocDetails || !lessonTocNav || !lessonTocDetails.open) return;
+
+    const activeLink = lessonTocNav.querySelector('a.is-active');
+    if (!activeLink) return;
+
+    const navRect = lessonTocNav.getBoundingClientRect();
+    const linkRect = activeLink.getBoundingClientRect();
+
+    if (linkRect.top < navRect.top || linkRect.bottom > navRect.bottom) {
+      activeLink.scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  if (lessonToc) {
+    lessonToc.addEventListener('click', (event) => {
+      const link = event.target.closest('a[href^="#"]');
+      if (!link) return;
+
+      const target = getTargetForLink(link);
+      if (!target) return;
+
+      event.preventDefault();
+
+      const scrollToTarget = () => {
+        const targetY = target.getBoundingClientRect().top + window.scrollY - getStickyOffset();
+        window.scrollTo({ top: Math.max(targetY, 0), behavior: 'smooth' });
+        history.replaceState(null, '', link.getAttribute('href'));
+        updateActiveTocLink();
+      };
+
+      if (lessonTocDetails && isMobile()) {
+        lessonTocDetails.removeAttribute('open');
+        lessonToc.classList.remove('is-open');
+        window.setTimeout(scrollToTarget, 80);
+      } else {
+        scrollToTarget();
+      }
+    });
+  }
+
+  if (lessonTocNav) {
     updateActiveTocLink();
-    window.addEventListener('scroll', updateActiveTocLink, { passive: true });
-    window.addEventListener('resize', updateActiveTocLink);
+    window.addEventListener('scroll', () => {
+      updateActiveTocLink();
+    }, { passive: true });
+    window.addEventListener('resize', () => {
+      updateActiveTocLink();
+      keepActiveLinkVisible();
+    });
   }
 
   document.querySelectorAll('.daf-card[data-daf-image]').forEach((card) => {
@@ -110,7 +159,8 @@ document.addEventListener('DOMContentLoaded', () => {
         figure.appendChild(img);
 
         const cap = document.createElement('figcaption');
-        cap.textContent = `תמונת הדף לשיעור ${name}.\nאין צורך להבין את כל הדף; הסימון מצביע על הקטע הנלמד.`;
+        cap.textContent = `תמונת הדף לשיעור ${name}.
+אין צורך להבין את כל הדף; הסימון מצביע על הקטע הנלמד.`;
         figure.appendChild(cap);
       };
 
