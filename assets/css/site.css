@@ -87,6 +87,34 @@ a:hover{text-decoration:underline}
 .daf-card.is-missing picture,.daf-card.is-missing figcaption{display:none}
 .daf-card.is-missing .missing-note{display:block}
 
+.lesson-signup{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:10px;
+  margin:42px 0 0;
+  padding:22px;
+  background:var(--bg);
+  border:1px solid rgba(201,168,106,.55);
+  border-radius:20px;
+}
+
+.lesson-signup strong{
+  color:var(--brand-dark);
+  font-size:21px;
+  line-height:1.45;
+}
+
+.lesson-signup span{
+  color:var(--muted);
+  font-size:17px;
+  line-height:1.6;
+}
+
+.lesson-signup .button{
+  margin-top:4px;
+}
+
 .lesson-bottom-nav{display:flex;justify-content:space-between;gap:16px;margin-top:42px;padding-top:22px;border-top:1px solid rgba(63,95,74,.16);font-size:17px}
 .lesson-bottom-nav span{color:var(--muted)}
 .plain-list{padding-inline-start:1.3em}
@@ -160,6 +188,11 @@ a:hover{text-decoration:underline}
   .lesson-article{padding:24px 18px 76px;border-radius:22px}
   .lesson-article h1{scroll-margin-top:96px}
   .lesson-section{scroll-margin-top:96px}
+
+  .lesson-signup{
+    margin-top:36px;
+    padding:18px;
+  }
 
   /*
     Mobile lesson navigation:
