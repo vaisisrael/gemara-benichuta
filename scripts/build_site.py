@@ -23,6 +23,7 @@ DIST = ROOT / "dist"
 BASE_PATH = "/gemara-benichuta"
 SITE_NAME = "גמרא למתחילים בניחותא"
 SITE_SUBTITLE = "לימוד תלמוד וגמרא מן המקור — צעד אחר צעד"
+WHATSAPP_CHANNEL_URL = "https://whatsapp.com/channel/0029VbCtpPOB4hdMMUaLUb0h"
 NAV_ITEMS = [
     ("בית", f"{BASE_PATH}/he/"),
     ("שיעורים", f"{BASE_PATH}/he/lessons/"),
@@ -331,6 +332,16 @@ def site_footer() -> str:
 </html>'''
 
 
+def whatsapp_signup_html() -> str:
+    return f'''<section class="cards-grid" aria-label="קבלת עדכונים">
+  <div class="card">
+    <strong>רוצים לקבל עדכון כשעולה שיעור חדש?</strong>
+    <span>הצטרפו לערוץ הווטסאפ השקט של גמרא למתחילים בניחותא. נשלח שם רק עדכונים קצרים וקישור לשיעור באתר.</span>
+    <a class="button secondary" href="{WHATSAPP_CHANNEL_URL}" target="_blank" rel="noopener">קבלו עדכון בווטסאפ</a>
+  </div>
+</section>'''
+
+
 def render_lesson_page(lesson: Lesson) -> str:
     meta = lesson.meta
     title = meta.get("title", "שיעור")
@@ -340,6 +351,7 @@ def render_lesson_page(lesson: Lesson) -> str:
   <a href="{BASE_PATH}/he/lessons/">לכל שיעורי הסדרה</a>
   <span>השיעור הבא יתווסף בהמשך</span>
 </nav>'''
+    whatsapp_signup = whatsapp_signup_html()
     return f'''{html_head(f"שיעור {lesson_number} — {title}", meta)}
 <body>
 {site_header("שיעורים")}
@@ -354,6 +366,7 @@ def render_lesson_page(lesson: Lesson) -> str:
   </aside>
   <article class="lesson-article">
     {lesson.html_body}
+    {whatsapp_signup}
     {prev_next}
   </article>
 </main>
