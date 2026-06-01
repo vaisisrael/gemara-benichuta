@@ -341,15 +341,35 @@ def whatsapp_signup_html() -> str:
 </section>'''
 
 
-def render_lesson_page(lesson: Lesson) -> str:
+def lesson_href(lesson: Lesson) -> str:
+    lesson_number = html.escape(lesson.meta.get("lesson_number", ""), quote=True)
+    return f"{BASE_PATH}/he/lessons/{lesson_number}.html"
+
+
+def render_lesson_bottom_nav(next_lesson: Lesson | None) -> str:
+    if next_lesson:
+        next_number = html.escape(next_lesson.meta.get("lesson_number", ""))
+        next_title = html.escape(next_lesson.meta.get("title", "השיעור הבא"))
+        next_link = (
+            f'<a href="{lesson_href(next_lesson)}">'
+            f'לשיעור הבא: שיעור {next_number} — {next_title}'
+            f'</a>'
+        )
+    else:
+        next_link = "<span>השיעור הבא יתווסף בהמשך</span>"
+
+    return f'''<nav class="lesson-bottom-nav" aria-label="ניווט בין שיעורים">
+  <a href="{BASE_PATH}/he/lessons/">לכל שיעורי הסדרה</a>
+  {next_link}
+</nav>'''
+
+
+def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str:
     meta = lesson.meta
     title = meta.get("title", "שיעור")
     lesson_number = meta.get("lesson_number", "")
     toc_links = "\n".join(f'<a href="#{section_id}">{html.escape(label)}</a>' for section_id, label in lesson.toc)
-    prev_next = f'''<nav class="lesson-bottom-nav" aria-label="ניווט בין שיעורים">
-  <a href="{BASE_PATH}/he/lessons/">לכל שיעורי הסדרה</a>
-  <span>השיעור הבא יתווסף בהמשך</span>
-</nav>'''
+    prev_next = render_lesson_bottom_nav(next_lesson)
     whatsapp_signup = whatsapp_signup_html()
     return f'''{html_head(f"שיעור {lesson_number} — {title}", meta)}
 <body>
@@ -417,14 +437,21 @@ def build_hebrew_lessons() -> None:
     source_dir = ROOT / "content" / "lessons"
     if not source_dir.exists():
         return
-    lessons = load_lessons(source_dir)
+
+    lessons = sorted(load_lessons(source_dir), key=lambda l: l.meta.get("lesson_number", ""))
     lessons_out = DIST / "he" / "lessons"
     lessons_out.mkdir(parents=True, exist_ok=True)
-    for lesson in lessons:
+
+    for index, lesson in enumerate(lessons):
         lesson_number = lesson.meta.get("lesson_number")
         if not lesson_number:
             continue
-        (lessons_out / f"{lesson_number}.html").write_text(render_lesson_page(lesson), encoding="utf-8")
+        next_lesson = lessons[index + 1] if index + 1 < len(lessons) else None
+        (lessons_out / f"{lesson_number}.html").write_text(
+            render_lesson_page(lesson, next_lesson),
+            encoding="utf-8",
+        )
+
     (lessons_out / "index.html").write_text(render_lessons_index(lessons), encoding="utf-8")
 
 
