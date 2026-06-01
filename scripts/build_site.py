@@ -24,6 +24,7 @@ BASE_PATH = "/gemara-benichuta"
 SITE_NAME = "גמרא למתחילים בניחותא"
 SITE_SUBTITLE = "לימוד תלמוד וגמרא מן המקור — צעד אחר צעד"
 WHATSAPP_CHANNEL_URL = "https://whatsapp.com/channel/0029VbCtpPOB4hdMMUaLUb0h"
+GA_MEASUREMENT_ID = "G-BYFSSTE1Z"
 
 NAV_ITEMS = [
     ("בית", f"{BASE_PATH}/he/"),
@@ -284,6 +285,17 @@ def nav_html(active: str) -> str:
     return "\n".join(links)
 
 
+def google_tag_html() -> str:
+    return f'''  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id={GA_MEASUREMENT_ID}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){{dataLayer.push(arguments);}}
+    gtag('js', new Date());
+    gtag('config', '{GA_MEASUREMENT_ID}');
+  </script>'''
+
+
 def html_head(title: str, meta: dict[str, str] | None = None) -> str:
     meta = meta or {}
     page_title = meta.get("seo_title") or title
@@ -297,6 +309,7 @@ def html_head(title: str, meta: dict[str, str] | None = None) -> str:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+{google_tag_html()}
   <title>{html.escape(page_title)} | {SITE_NAME}</title>
   <meta name="description" content="{html.escape(desc, quote=True)}">
   <meta property="og:title" content="{html.escape(og_title, quote=True)}">
