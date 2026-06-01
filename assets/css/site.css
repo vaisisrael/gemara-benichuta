@@ -108,7 +108,18 @@ a:hover{text-decoration:underline}
 
 @media (max-width:850px){
   body{font-size:19px;line-height:1.82}
-  .site-header{align-items:flex-start}
+  .site-header{
+    align-items:center;
+    gap:10px;
+  }
+  .brand{
+    flex:1;
+    min-width:0;
+  }
+  .brand-title{
+    white-space:nowrap;
+    font-size:22px;
+  }
   .menu-toggle{display:block}
   .main-nav{display:none;position:absolute;inset-inline:16px;top:76px;flex-direction:column;align-items:stretch;background:var(--white);border:1px solid rgba(63,95,74,.16);border-radius:20px;padding:14px;box-shadow:0 12px 40px rgba(31,41,51,.12)}
   .main-nav.is-open{display:flex}
