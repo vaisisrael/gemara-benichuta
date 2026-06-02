@@ -24,7 +24,7 @@ BASE_PATH = "/gemara-benichuta"
 SITE_NAME = "גמרא למתחילים בניחותא"
 SITE_SUBTITLE = "לימוד תלמוד וגמרא מן המקור — צעד אחר צעד"
 WHATSAPP_CHANNEL_URL = "https://whatsapp.com/channel/0029VbCtpPOB4hdMMUaLUb0h"
-GA_MEASUREMENT_ID = "G-BYFSSTE1Z"
+GA_MEASUREMENT_ID = "G-BBYFSSTE1Z"
 
 NAV_ITEMS = [
     ("בית", f"{BASE_PATH}/he/"),
