@@ -6,6 +6,9 @@ Generated public lesson pages: he/lessons/*.html inside the build output.
 
 The script intentionally uses only Python standard-library modules, so it can run
 inside GitHub Actions without installing dependencies.
+
+Optional: if scripts/generate_og.py and Pillow are available, the build also
+generates Open Graph images for lesson links.
 """
 
 from __future__ import annotations
@@ -14,6 +17,7 @@ import html
 import os
 import re
 import shutil
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -42,6 +46,7 @@ HEADING_IDS = {
     "איך הסוגיה חושבת?": "thinking",
     "פוגשים את הדף": "daf",
     "מושגים חדשים": "concepts",
+    "מילון ארמית קצר": "aramaic",
     "בודקים שהבנו": "check",
     "מה נשאר ביד": "takeaway",
 }
@@ -86,7 +91,6 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
 
     match = re.match(r"^---\s*\n(.*?)\n---\s*\n?(.*)$", text, flags=re.S)
     if not match:
-        # Fallback for accidentally compacted files.
         parts = text.split("---", 2)
         if len(parts) >= 3:
             raw_meta, body = parts[1], parts[2]
@@ -129,16 +133,12 @@ def inline_markdown(text: str) -> str:
         return f"\u0000{len(placeholders)-1}\u0000"
 
     text = html.escape(text, quote=False)
-
-    # Inline code first.
     text = re.sub(r"`([^`]+)`", lambda m: stash(f"<code>{m.group(1)}</code>"), text)
-    # Markdown links.
     text = re.sub(
         r"\[([^\]]+)\]\(([^)]+)\)",
         lambda m: stash(f'<a href="{html.escape(m.group(2), quote=True)}">{m.group(1)}</a>'),
         text,
     )
-    # Bold.
     text = re.sub(r"\*\*(.+?)\*\*", lambda m: stash(f"<strong>{m.group(1)}</strong>"), text)
 
     for i, value in enumerate(placeholders):
@@ -205,7 +205,6 @@ def render_markdown(body: str, meta: dict[str, str]) -> tuple[str, list[tuple[st
 
         if block.startswith("# "):
             text = block[2:].strip()
-            # '# שיעור 001' becomes the kicker, not a giant title.
             if re.fullmatch(r"שיעור\s+\d+", text):
                 if not kicker_seen:
                     out.append(f'<p class="lesson-kicker">{inline_markdown(text)}</p>')
@@ -216,7 +215,6 @@ def render_markdown(body: str, meta: dict[str, str]) -> tuple[str, list[tuple[st
                 toc.append(("lesson-top", text))
                 title_seen = True
                 continue
-            # Extra H1s are downgraded to H2 sections.
             block = "## " + text
 
         if block.startswith("## "):
@@ -269,11 +267,6 @@ def render_markdown(body: str, meta: dict[str, str]) -> tuple[str, list[tuple[st
         out.append(f"<p>{inline_markdown(paragraph)}</p>")
 
     close_section()
-
-    if meta.get("daf_image") and not daf_inserted:
-        # No visible Daf section exists, so do nothing; the lesson text controls structure.
-        pass
-
     return "\n".join(out), toc
 
 
@@ -296,13 +289,20 @@ def google_tag_html() -> str:
   </script>'''
 
 
+def default_og_image(meta: dict[str, str]) -> str:
+    lesson_number = meta.get("lesson_number", "").strip()
+    if lesson_number:
+        return f"/assets/og/{lesson_number}.webp"
+    return ""
+
+
 def html_head(title: str, meta: dict[str, str] | None = None) -> str:
     meta = meta or {}
     page_title = meta.get("seo_title") or title
     desc = meta.get("seo_description") or meta.get("og_description") or SITE_SUBTITLE
     og_title = meta.get("og_title") or meta.get("title") or title
     og_desc = meta.get("og_description") or desc
-    og_image = meta.get("og_image", "")
+    og_image = meta.get("og_image") or default_og_image(meta)
     og_image_tag = f'<meta property="og:image" content="{html.escape(BASE_PATH + og_image if og_image.startswith("/") else og_image, quote=True)}">' if og_image else ""
     return f'''<!doctype html>
 <html lang="he" dir="rtl">
@@ -468,8 +468,21 @@ def build_hebrew_lessons() -> None:
     (lessons_out / "index.html").write_text(render_lessons_index(lessons), encoding="utf-8")
 
 
+def generate_og_images_if_available() -> None:
+    try:
+        scripts_dir = ROOT / "scripts"
+        if str(scripts_dir) not in sys.path:
+            sys.path.insert(0, str(scripts_dir))
+        import generate_og  # type: ignore
+
+        generate_og.generate_all()
+    except Exception as exc:
+        print(f"Warning: OG images were not generated: {exc}")
+
+
 def main() -> None:
     os.chdir(ROOT)
+    generate_og_images_if_available()
     clean_dist()
     copy_static_site()
     build_hebrew_lessons()
