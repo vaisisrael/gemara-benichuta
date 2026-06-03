@@ -40,11 +40,12 @@ WIDTH = 1200
 HEIGHT = 630
 
 BG = "#FAF7F0"
+PANEL = "#FFFDF6"
 GREEN = "#3F5F4A"
 GREEN_DARK = "#2F4638"
 GOLD = "#C9A86A"
 TEXT = "#1F2933"
-CREAM = "#FFFDF6"
+MUTED = "#4B5563"
 
 
 def parse_frontmatter(text: str) -> dict[str, str]:
@@ -170,7 +171,6 @@ def wrap_rtl(draw: ImageDraw.ImageDraw, text: str, fnt, max_width: int) -> list[
 
 
 def clean_display_text(text: str) -> str:
-    """Avoid punctuation that may render badly in generated images."""
     return (
         text.replace(":", " ")
         .replace("·", " ")
@@ -215,8 +215,39 @@ def draw_fallback_icon(img: Image.Image, x: int, y: int, size: int) -> None:
     draw = ImageDraw.Draw(img)
     rounded_rect(draw, (x, y, x + size, y + size), 18, GREEN, GOLD, 4)
     glyph_font = font(int(size * 0.58), bold=True)
-    draw.text((x + size // 2, y + int(size * 0.55)), "ג", font=glyph_font, fill=CREAM, anchor="mm")
+    draw.text((x + size // 2, y + int(size * 0.55)), "ג", font=glyph_font, fill=PANEL, anchor="mm")
     draw.line((x + 24, y + size - 24, x + size - 24, y + size - 24), fill=GOLD, width=4)
+
+
+def fit_title_lines(
+    draw: ImageDraw.ImageDraw,
+    title: str,
+    max_width: int,
+    max_lines: int = 2,
+    start_size: int = 50,
+    min_size: int = 34,
+):
+    size = start_size
+
+    while size >= min_size:
+        fnt = font(size, bold=True)
+        lines = wrap_rtl(draw, title, fnt, max_width)
+        if len(lines) <= max_lines:
+            return lines, fnt, size
+        size -= 2
+
+    fnt = font(min_size, bold=True)
+    lines = wrap_rtl(draw, title, fnt, max_width)
+
+    if len(lines) > max_lines:
+        lines = lines[:max_lines]
+        # Add ellipsis-like mark safely without special unicode.
+        last = lines[-1]
+        while text_size(draw, last + "...", fnt)[0] > max_width and len(last) > 3:
+            last = last[:-1].strip()
+        lines[-1] = last + "..."
+
+    return lines, fnt, min_size
 
 
 def make_og_image(meta: dict[str, str]) -> Image.Image:
@@ -229,18 +260,23 @@ def make_og_image(meta: dict[str, str]) -> Image.Image:
     img = Image.new("RGB", (WIDTH, HEIGHT), BG)
     draw = ImageDraw.Draw(img)
 
-    # Soft background shapes.
+    # Gentle background.
     draw.ellipse((-250, -240, 360, 360), fill="#EEF0E6")
-    draw.ellipse((940, -220, 1370, 250), fill="#F2E8D5")
+    draw.ellipse((930, -220, 1370, 250), fill="#F2E8D5")
     draw.ellipse((900, 370, 1380, 820), fill="#EFE2C8")
 
-    margin = 62
-    rounded_rect(draw, (margin, 54, WIDTH - margin, HEIGHT - 54), 42, CREAM, GOLD, 5)
+    # Main panel.
+    margin = 64
+    panel_box = (margin, 58, WIDTH - margin, HEIGHT - 58)
+    rounded_rect(draw, panel_box, 42, PANEL, GOLD, 5)
 
-    # Icon.
-    icon_size = 86
-    icon_x = WIDTH - margin - icon_size - 28
-    icon_y = 82
+    right = WIDTH - margin - 56
+    left = margin + 56
+
+    # Icon + brand.
+    icon_size = 82
+    icon_x = right - icon_size
+    icon_y = 88
     icon = load_icon(icon_size)
 
     if icon:
@@ -251,7 +287,6 @@ def make_og_image(meta: dict[str, str]) -> Image.Image:
     else:
         draw_fallback_icon(img, icon_x, icon_y, icon_size)
 
-    # Brand line.
     brand_font = font(30, bold=True)
     draw_rtl(
         draw,
@@ -261,33 +296,26 @@ def make_og_image(meta: dict[str, str]) -> Image.Image:
         GREEN_DARK,
     )
 
-    # Lesson number.
-    lesson_font = font(78, bold=True)
+    # Lesson number, separate and clear.
+    lesson_font = font(62, bold=True)
     lesson_text = f"שיעור {lesson_number}" if lesson_number else "שיעור"
-    draw_rtl(draw, (WIDTH - margin - 58, 230), lesson_text, lesson_font, GREEN_DARK)
+    draw_rtl(draw, (right, 245), lesson_text, lesson_font, GREEN_DARK)
 
-    # Title banner.
-    banner_left = margin + 54
-    banner_right = WIDTH - margin - 54
-    banner_top = 284
-    banner_bottom = 396
-    rounded_rect(draw, (banner_left, banner_top, banner_right, banner_bottom), 22, GREEN_DARK)
+    # Title, no overlay, no banner.
+    title_lines, title_font, title_size = fit_title_lines(
+        draw,
+        title,
+        max_width=860,
+        max_lines=2,
+        start_size=50,
+        min_size=34,
+    )
 
-    title_font_size = 42
-    title_font = font(title_font_size, bold=True)
-    lines = wrap_rtl(draw, title, title_font, banner_right - banner_left - 64)
+    y = 330
+    line_h = title_size + 16
 
-    if len(lines) > 2:
-        title_font_size = 36
-        title_font = font(title_font_size, bold=True)
-        lines = wrap_rtl(draw, title, title_font, banner_right - banner_left - 64)[:2]
-
-    line_h = title_font_size + 8
-    total_h = len(lines) * line_h
-    y = banner_top + (banner_bottom - banner_top - total_h) // 2 + title_font_size
-
-    for line in lines:
-        draw_rtl(draw, (banner_right - 32, y), line, title_font, CREAM)
+    for line in title_lines:
+        draw_rtl(draw, (right, y), line, title_font, TEXT)
         y += line_h
 
     # Source line.
@@ -299,18 +327,17 @@ def make_og_image(meta: dict[str, str]) -> Image.Image:
     if amud:
         source_parts.append(f"עמוד {amud}")
 
-    source = "   ".join(source_parts)
-    source_font = font(38, bold=False)
-    draw_rtl(draw, (WIDTH - margin - 58, 475), source, source_font, TEXT)
+    source = " / ".join(source_parts)
+    source_font = font(36, bold=False)
+    draw_rtl(draw, (right, 485), source, source_font, MUTED)
 
-    # Accent line.
-    draw.line((270, 520, 930, 520), fill=GOLD, width=3)
+    # Accent line and footer.
+    draw.line((left, 525, right, 525), fill=GOLD, width=3)
 
-    # Footer.
     footer_font = font(24, bold=False)
     draw_rtl(
         draw,
-        (WIDTH - margin - 58, 565),
+        (right, 568),
         "לימוד תלמוד וגמרא מן המקור צעד אחר צעד",
         footer_font,
         GREEN_DARK,
