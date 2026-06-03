@@ -19,7 +19,7 @@ from typing import Iterable
 
 try:
     from PIL import Image, ImageDraw, ImageFont
-except ImportError as exc:  # pragma: no cover
+except ImportError as exc:
     raise SystemExit(
         "Missing dependency: Pillow. Install with: python -m pip install Pillow"
     ) from exc
@@ -28,11 +28,12 @@ except ImportError as exc:  # pragma: no cover
 ROOT = Path(__file__).resolve().parents[1]
 LESSONS_DIR = ROOT / "content" / "lessons"
 OG_DIR = ROOT / "assets" / "og"
+
 ICON_CANDIDATES = [
     ROOT / "assets" / "icons" / "logo.png",
-    ROOT / "assets" / "icons" / "logo.webp",
-    ROOT / "assets" / "icons" / "profile.png",
-    ROOT / "assets" / "icons" / "favicon.png",
+    ROOT / "assets" / "icons" / "icon-512.png",
+    ROOT / "assets" / "icons" / "icon-192.png",
+    ROOT / "assets" / "icons" / "apple-touch-icon.png",
 ]
 
 WIDTH = 1200
@@ -57,17 +58,21 @@ def parse_frontmatter(text: str) -> dict[str, str]:
         line = line.strip()
         if not line or line.startswith("#") or ":" not in line:
             continue
+
         key, value = line.split(":", 1)
         value = value.strip()
+
         if (value.startswith('"') and value.endswith('"')) or (
             value.startswith("'") and value.endswith("'")
         ):
             value = value[1:-1]
+
         meta[key.strip()] = value
+
     return meta
 
 
-def find_font(preferred_names: Iterable[str], fallback_size: int):
+def find_font(preferred_names: Iterable[str], size: int):
     search_dirs = [
         Path("/usr/share/fonts/truetype/noto"),
         Path("/usr/share/fonts/opentype/noto"),
@@ -80,15 +85,16 @@ def find_font(preferred_names: Iterable[str], fallback_size: int):
     for directory in search_dirs:
         if not directory.exists():
             continue
+
         for preferred in preferred_names:
             for path in directory.rglob(preferred):
                 try:
-                    return ImageFont.truetype(str(path), fallback_size)
+                    return ImageFont.truetype(str(path), size)
                 except OSError:
                     pass
 
     try:
-        return ImageFont.truetype("DejaVuSans.ttf", fallback_size)
+        return ImageFont.truetype("DejaVuSans.ttf", size)
     except OSError:
         return ImageFont.load_default()
 
@@ -98,16 +104,15 @@ def font(size: int, bold: bool = False):
         return find_font(
             [
                 "NotoSansHebrew-Bold.ttf",
-                "NotoSansHebrew_Condensed-Bold.ttf",
                 "NotoSans-Bold.ttf",
                 "DejaVuSans-Bold.ttf",
             ],
             size,
         )
+
     return find_font(
         [
             "NotoSansHebrew-Regular.ttf",
-            "NotoSansHebrew_Condensed-Regular.ttf",
             "NotoSans-Regular.ttf",
             "DejaVuSans.ttf",
         ],
@@ -129,7 +134,15 @@ def draw_rtl(
     anchor: str = "ra",
 ) -> None:
     try:
-        draw.text(xy, text, font=fnt, fill=fill, anchor=anchor, direction="rtl", language="he")
+        draw.text(
+            xy,
+            text,
+            font=fnt,
+            fill=fill,
+            anchor=anchor,
+            direction="rtl",
+            language="he",
+        )
     except Exception:
         draw.text(xy, text, font=fnt, fill=fill, anchor=anchor)
 
@@ -141,28 +154,52 @@ def wrap_rtl(draw: ImageDraw.ImageDraw, text: str, fnt, max_width: int) -> list[
 
     lines: list[str] = []
     current = words[0]
+
     for word in words[1:]:
         candidate = current + " " + word
         width, _ = text_size(draw, candidate, fnt)
+
         if width <= max_width:
             current = candidate
         else:
             lines.append(current)
             current = word
+
     lines.append(current)
     return lines
 
 
-def rounded_rect(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int], radius: int, fill: str, outline: str | None = None, width: int = 1) -> None:
+def clean_display_text(text: str) -> str:
+    """Avoid punctuation that may render badly in generated images."""
+    return (
+        text.replace(":", " ")
+        .replace("·", " ")
+        .replace("—", " ")
+        .replace("–", " ")
+        .replace("|", " ")
+        .replace("  ", " ")
+        .strip()
+    )
+
+
+def rounded_rect(
+    draw: ImageDraw.ImageDraw,
+    box: tuple[int, int, int, int],
+    radius: int,
+    fill: str,
+    outline: str | None = None,
+    width: int = 1,
+) -> None:
     draw.rounded_rectangle(box, radius=radius, fill=fill, outline=outline, width=width)
 
 
-def load_icon(size: int = 96) -> Image.Image | None:
+def load_icon(size: int = 86) -> Image.Image | None:
     for path in ICON_CANDIDATES:
         if path.exists():
             try:
                 icon = Image.open(path).convert("RGBA")
                 icon.thumbnail((size, size), Image.LANCZOS)
+
                 canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
                 x = (size - icon.width) // 2
                 y = (size - icon.height) // 2
@@ -170,40 +207,42 @@ def load_icon(size: int = 96) -> Image.Image | None:
                 return canvas
             except Exception:
                 continue
+
     return None
 
 
 def draw_fallback_icon(img: Image.Image, x: int, y: int, size: int) -> None:
     draw = ImageDraw.Draw(img)
-    rounded_rect(draw, (x, y, x + size, y + size), 22, GREEN, GOLD, 4)
-    alef_font = font(int(size * 0.58), bold=True)
-    draw.text((x + size // 2, y + int(size * 0.55)), "ג", font=alef_font, fill=CREAM, anchor="mm")
-    draw.line((x + 24, y + size - 28, x + size - 24, y + size - 28), fill=GOLD, width=5)
+    rounded_rect(draw, (x, y, x + size, y + size), 18, GREEN, GOLD, 4)
+    glyph_font = font(int(size * 0.58), bold=True)
+    draw.text((x + size // 2, y + int(size * 0.55)), "ג", font=glyph_font, fill=CREAM, anchor="mm")
+    draw.line((x + 24, y + size - 24, x + size - 24, y + size - 24), fill=GOLD, width=4)
 
 
 def make_og_image(meta: dict[str, str]) -> Image.Image:
-    lesson_number = meta.get("lesson_number", "").strip()
-    title = meta.get("title", "").strip()
-    tractate = meta.get("tractate", "").strip()
-    daf = meta.get("daf", "").strip()
-    amud = meta.get("amud", "").strip()
+    lesson_number = clean_display_text(meta.get("lesson_number", "").strip())
+    title = clean_display_text(meta.get("title", "").strip())
+    tractate = clean_display_text(meta.get("tractate", "").strip())
+    daf = clean_display_text(meta.get("daf", "").strip())
+    amud = clean_display_text(meta.get("amud", "").strip())
 
     img = Image.new("RGB", (WIDTH, HEIGHT), BG)
     draw = ImageDraw.Draw(img)
 
-    draw.ellipse((-260, -220, 360, 380), fill="#EEF0E6")
-    draw.ellipse((930, -210, 1380, 260), fill="#F2E8D5")
-    draw.ellipse((920, 360, 1370, 810), fill="#EFE2C8")
-    draw.arc((-220, 390, 420, 1030), 205, 335, fill="#E6D7B6", width=4)
-    draw.arc((-170, 430, 380, 980), 205, 335, fill="#EBDDBE", width=3)
+    # Soft background shapes.
+    draw.ellipse((-250, -240, 360, 360), fill="#EEF0E6")
+    draw.ellipse((940, -220, 1370, 250), fill="#F2E8D5")
+    draw.ellipse((900, 370, 1380, 820), fill="#EFE2C8")
 
     margin = 62
     rounded_rect(draw, (margin, 54, WIDTH - margin, HEIGHT - 54), 42, CREAM, GOLD, 5)
 
-    icon_size = 92
+    # Icon.
+    icon_size = 86
     icon_x = WIDTH - margin - icon_size - 28
-    icon_y = 78
+    icon_y = 82
     icon = load_icon(icon_size)
+
     if icon:
         img_rgba = img.convert("RGBA")
         img_rgba.alpha_composite(icon, (icon_x, icon_y))
@@ -212,43 +251,70 @@ def make_og_image(meta: dict[str, str]) -> Image.Image:
     else:
         draw_fallback_icon(img, icon_x, icon_y, icon_size)
 
+    # Brand line.
     brand_font = font(30, bold=True)
-    draw_rtl(draw, (icon_x - 24, icon_y + 56), "גמרא למתחילים בניחותא", brand_font, GREEN_DARK)
+    draw_rtl(
+        draw,
+        (icon_x - 26, icon_y + 52),
+        "גמרא למתחילים בניחותא",
+        brand_font,
+        GREEN_DARK,
+    )
 
-    lesson_font = font(92, bold=True)
+    # Lesson number.
+    lesson_font = font(78, bold=True)
     lesson_text = f"שיעור {lesson_number}" if lesson_number else "שיעור"
-    draw_rtl(draw, (WIDTH - margin - 56, 225), lesson_text, lesson_font, GREEN_DARK)
+    draw_rtl(draw, (WIDTH - margin - 58, 230), lesson_text, lesson_font, GREEN_DARK)
 
-    banner_left = margin + 58
-    banner_right = WIDTH - margin - 58
-    banner_top = 270
+    # Title banner.
+    banner_left = margin + 54
+    banner_right = WIDTH - margin - 54
+    banner_top = 284
     banner_bottom = 396
     rounded_rect(draw, (banner_left, banner_top, banner_right, banner_bottom), 22, GREEN_DARK)
 
-    title_font_size = 46
+    title_font_size = 42
     title_font = font(title_font_size, bold=True)
-    lines = wrap_rtl(draw, title, title_font, banner_right - banner_left - 60)
-    if len(lines) > 2:
-        title_font_size = 40
-        title_font = font(title_font_size, bold=True)
-        lines = wrap_rtl(draw, title, title_font, banner_right - banner_left - 60)[:2]
+    lines = wrap_rtl(draw, title, title_font, banner_right - banner_left - 64)
 
-    line_h = title_font_size + 10
+    if len(lines) > 2:
+        title_font_size = 36
+        title_font = font(title_font_size, bold=True)
+        lines = wrap_rtl(draw, title, title_font, banner_right - banner_left - 64)[:2]
+
+    line_h = title_font_size + 8
     total_h = len(lines) * line_h
     y = banner_top + (banner_bottom - banner_top - total_h) // 2 + title_font_size
+
     for line in lines:
         draw_rtl(draw, (banner_right - 32, y), line, title_font, CREAM)
         y += line_h
 
-    source = " · ".join(part for part in [tractate, f"דף {daf}" if daf else "", f"עמוד {amud}" if amud else ""] if part)
-    source_font = font(42, bold=False)
-    draw_rtl(draw, (WIDTH // 2 + 250, 472), source, source_font, TEXT)
+    # Source line.
+    source_parts = []
+    if tractate:
+        source_parts.append(tractate)
+    if daf:
+        source_parts.append(f"דף {daf}")
+    if amud:
+        source_parts.append(f"עמוד {amud}")
 
-    draw.line((260, 520, 940, 520), fill=GOLD, width=3)
-    draw.polygon([(WIDTH // 2, 508), (WIDTH // 2 + 12, 520), (WIDTH // 2, 532), (WIDTH // 2 - 12, 520)], fill=GOLD)
+    source = "   ".join(source_parts)
+    source_font = font(38, bold=False)
+    draw_rtl(draw, (WIDTH - margin - 58, 475), source, source_font, TEXT)
 
+    # Accent line.
+    draw.line((270, 520, 930, 520), fill=GOLD, width=3)
+
+    # Footer.
     footer_font = font(24, bold=False)
-    draw_rtl(draw, (WIDTH - margin - 58, 565), "לימוד תלמוד וגמרא מן המקור — צעד אחר צעד", footer_font, GREEN_DARK)
+    draw_rtl(
+        draw,
+        (WIDTH - margin - 58, 565),
+        "לימוד תלמוד וגמרא מן המקור צעד אחר צעד",
+        footer_font,
+        GREEN_DARK,
+    )
 
     return img
 
@@ -266,12 +332,14 @@ def generate_all() -> None:
 
         meta = parse_frontmatter(lesson_path.read_text(encoding="utf-8"))
         lesson_number = meta.get("lesson_number", "").strip()
+
         if not lesson_number:
             continue
 
         out_path = OG_DIR / f"{lesson_number}.webp"
         image = make_og_image(meta)
         image.save(out_path, "WEBP", quality=92, method=6)
+
         print(f"Generated {out_path.relative_to(ROOT)}")
 
 
