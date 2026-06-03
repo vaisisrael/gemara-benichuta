@@ -237,6 +237,8 @@ def wrap_rtl(draw: ImageDraw.ImageDraw, text: str, fnt, max_width: int) -> list[
 def clean_display_text(text: str) -> str:
     return (
         text.replace(":", " ")
+        .replace("?", "")
+        .replace("؟", "")
         .replace("·", " ")
         .replace("—", " ")
         .replace("–", " ")
