@@ -48,6 +48,70 @@ TEXT = "#1F2933"
 MUTED = "#4B5563"
 
 
+HEBREW_ONES_MASC = {
+    1: "ראשון",
+    2: "שני",
+    3: "שלישי",
+    4: "רביעי",
+    5: "חמישי",
+    6: "שישי",
+    7: "שביעי",
+    8: "שמיני",
+    9: "תשיעי",
+}
+
+HEBREW_TEENS_MASC = {
+    10: "עשירי",
+    11: "אחד עשר",
+    12: "שנים עשר",
+    13: "שלושה עשר",
+    14: "ארבעה עשר",
+    15: "חמישה עשר",
+    16: "שישה עשר",
+    17: "שבעה עשר",
+    18: "שמונה עשר",
+    19: "תשעה עשר",
+}
+
+HEBREW_TENS = {
+    20: "עשרים",
+    30: "שלושים",
+    40: "ארבעים",
+    50: "חמישים",
+    60: "שישים",
+    70: "שבעים",
+    80: "שמונים",
+    90: "תשעים",
+}
+
+
+def lesson_number_to_hebrew_words(value: str) -> str:
+    """Convert lesson number like 003 or 032 to Hebrew display text."""
+    try:
+        number = int(value)
+    except ValueError:
+        return f"שיעור {value}"
+
+    if number <= 0:
+        return f"שיעור {value}"
+
+    if number in HEBREW_ONES_MASC:
+        return f"שיעור {HEBREW_ONES_MASC[number]}"
+
+    if number in HEBREW_TEENS_MASC:
+        return f"שיעור {HEBREW_TEENS_MASC[number]}"
+
+    if number in HEBREW_TENS:
+        return f"שיעור {HEBREW_TENS[number]}"
+
+    if 21 <= number <= 99:
+        tens = (number // 10) * 10
+        ones = number % 10
+        return f"שיעור {HEBREW_TENS[tens]} ו{HEBREW_ONES_MASC[ones]}"
+
+    return f"שיעור {number}"
+
+
 def parse_frontmatter(text: str) -> dict[str, str]:
     text = text.replace("\r\n", "\n")
     match = re.match(r"^---\s*\n(.*?)\n---\s*\n?", text, flags=re.S)
@@ -177,6 +241,7 @@ def clean_display_text(text: str) -> str:
         .replace("—", " ")
         .replace("–", " ")
         .replace("|", " ")
+        .replace("/", " ")
         .replace("  ", " ")
         .strip()
     )
@@ -241,7 +306,6 @@ def fit_title_lines(
 
     if len(lines) > max_lines:
         lines = lines[:max_lines]
-        # Add ellipsis-like mark safely without special unicode.
         last = lines[-1]
         while text_size(draw, last + "...", fnt)[0] > max_width and len(last) > 3:
             last = last[:-1].strip()
@@ -251,7 +315,9 @@ def fit_title_lines(
 
 
 def make_og_image(meta: dict[str, str]) -> Image.Image:
-    lesson_number = clean_display_text(meta.get("lesson_number", "").strip())
+    lesson_number = meta.get("lesson_number", "").strip()
+    lesson_text = lesson_number_to_hebrew_words(lesson_number)
+
     title = clean_display_text(meta.get("title", "").strip())
     tractate = clean_display_text(meta.get("tractate", "").strip())
     daf = clean_display_text(meta.get("daf", "").strip())
@@ -296,9 +362,8 @@ def make_og_image(meta: dict[str, str]) -> Image.Image:
         GREEN_DARK,
     )
 
-    # Lesson number, separate and clear.
-    lesson_font = font(62, bold=True)
-    lesson_text = f"שיעור {lesson_number}" if lesson_number else "שיעור"
+    # Lesson number in Hebrew words, to avoid digit-rendering issues.
+    lesson_font = font(56, bold=True)
     draw_rtl(draw, (right, 245), lesson_text, lesson_font, GREEN_DARK)
 
     # Title, no overlay, no banner.
@@ -318,7 +383,7 @@ def make_og_image(meta: dict[str, str]) -> Image.Image:
         draw_rtl(draw, (right, y), line, title_font, TEXT)
         y += line_h
 
-    # Source line.
+    # Source line: no slashes, dots, or separators that may render as squares.
     source_parts = []
     if tractate:
         source_parts.append(tractate)
@@ -327,7 +392,7 @@ def make_og_image(meta: dict[str, str]) -> Image.Image:
     if amud:
         source_parts.append(f"עמוד {amud}")
 
-    source = " / ".join(source_parts)
+    source = " ".join(source_parts)
     source_font = font(36, bold=False)
     draw_rtl(draw, (right, 485), source, source_font, MUTED)
 
