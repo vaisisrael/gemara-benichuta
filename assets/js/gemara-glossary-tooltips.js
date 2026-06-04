@@ -20,7 +20,7 @@
     glossary.forEach((entry) => {
       const normalizedTerm = normalizeHebrew(entry.term);
 
-      // עובדים רק עם מילים בודדות, לא עם ביטויים בני כמה מילים
+      // עובדים רק עם מילים בודדות, לא עם ביטויים בני כמה מילים.
       if (!normalizedTerm || /\s/.test(normalizedTerm)) return;
 
       glossaryMap.set(normalizedTerm, entry);
@@ -32,7 +32,8 @@
     if (!sourceQuotes.length) return;
 
     sourceQuotes.forEach((quote) => {
-      applyGlossaryToElement(quote, glossaryMap);
+      const usedTermsInThisQuote = new Set();
+      applyGlossaryToElement(quote, glossaryMap, usedTermsInThisQuote);
     });
 
     setupTooltipClicks();
@@ -103,7 +104,7 @@
       .trim();
   }
 
-  function applyGlossaryToElement(root, glossaryMap) {
+  function applyGlossaryToElement(root, glossaryMap, usedTermsInThisQuote) {
     const walker = document.createTreeWalker(
       root,
       NodeFilter.SHOW_TEXT,
@@ -123,16 +124,17 @@
     );
 
     const textNodes = [];
+
     while (walker.nextNode()) {
       textNodes.push(walker.currentNode);
     }
 
     textNodes.forEach((textNode) => {
-      replaceWordsInTextNode(textNode, glossaryMap);
+      replaceWordsInTextNode(textNode, glossaryMap, usedTermsInThisQuote);
     });
   }
 
-  function replaceWordsInTextNode(textNode, glossaryMap) {
+  function replaceWordsInTextNode(textNode, glossaryMap, usedTermsInThisQuote) {
     const text = textNode.nodeValue;
     const wordRegex = /[א-ת\u0591-\u05C7]+/g;
 
@@ -154,8 +156,9 @@
       const normalizedWord = normalizeHebrew(word);
       const entry = glossaryMap.get(normalizedWord);
 
-      if (entry) {
+      if (entry && !usedTermsInThisQuote.has(normalizedWord)) {
         fragment.appendChild(createTooltip(entry, word));
+        usedTermsInThisQuote.add(normalizedWord);
         changed = true;
       } else {
         fragment.appendChild(document.createTextNode(word));
@@ -263,6 +266,7 @@
       if (!isOpen) {
         button.setAttribute("aria-expanded", "true");
         popover.hidden = false;
+        keepPopoverInsideViewport(popover);
       }
     });
 
@@ -271,6 +275,39 @@
         closeAllTooltips();
       }
     });
+
+    window.addEventListener("resize", () => {
+      document.querySelectorAll(`.${CLASS_POPOVER}:not([hidden])`).forEach((popover) => {
+        keepPopoverInsideViewport(popover);
+      });
+    });
+  }
+
+  function keepPopoverInsideViewport(popover) {
+    popover.style.left = "";
+    popover.style.right = "";
+    popover.style.transform = "";
+
+    const margin = 12;
+    const rect = popover.getBoundingClientRect();
+
+    if (rect.left < margin) {
+      popover.style.left = `${margin}px`;
+      popover.style.right = "auto";
+      popover.style.transform = "none";
+      popover.style.position = "fixed";
+      return;
+    }
+
+    if (rect.right > window.innerWidth - margin) {
+      popover.style.left = "auto";
+      popover.style.right = `${margin}px`;
+      popover.style.transform = "none";
+      popover.style.position = "fixed";
+      return;
+    }
+
+    popover.style.position = "absolute";
   }
 
   function closeAllTooltips() {
@@ -280,6 +317,10 @@
 
     document.querySelectorAll(`.${CLASS_POPOVER}`).forEach((popover) => {
       popover.hidden = true;
+      popover.style.left = "";
+      popover.style.right = "";
+      popover.style.transform = "";
+      popover.style.position = "";
     });
   }
 
@@ -304,8 +345,8 @@
         text-decoration-line: underline;
         text-decoration-style: solid;
         text-decoration-thickness: 1px;
-        text-underline-offset: 0.2em;
-        text-decoration-color: rgba(63, 95, 74, 0.75);
+        text-underline-offset: 0.24em;
+        text-decoration-color: rgba(63, 95, 74, 0.72);
       }
 
       .${CLASS_TERM}:focus {
@@ -316,11 +357,11 @@
 
       .${CLASS_POPOVER} {
         position: absolute;
-        z-index: 50;
+        z-index: 100;
         right: 0;
         top: calc(100% + 0.35rem);
         min-width: 13rem;
-        max-width: min(18rem, 82vw);
+        max-width: min(18rem, calc(100vw - 24px));
         padding: 0.85rem 1rem;
         border: 1px solid #C9A86A;
         border-radius: 12px;
@@ -374,15 +415,6 @@
       .gb-glossary-structure-label {
         font-weight: 700;
         margin-bottom: 0.2rem;
-      }
-
-      @media (max-width: 640px) {
-        .${CLASS_POPOVER} {
-          right: auto;
-          left: 50%;
-          transform: translateX(-50%);
-          width: min(18rem, calc(100vw - 2rem));
-        }
       }
     `;
 
