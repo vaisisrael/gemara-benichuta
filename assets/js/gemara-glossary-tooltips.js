@@ -1,100 +1,84 @@
 (() => {
   "use strict";
 
-  const CONFIG = {
-    glossaryFileName: "מילון_לשון_הגמרא.md",
-    sourceHeadingText: "לשון המקור",
-    tooltipClass: "gb-glossary-tooltip",
-    termClass: "gb-glossary-term",
-    wrapClass: "gb-glossary-wrap",
-    popoverClass: "gb-glossary-popover"
-  };
+  const BASE_PATH = "/gemara-benichuta";
+  const GLOSSARY_URL = `${BASE_PATH}/he/מילון_לשון_הגמרא.md`;
+
+  const CLASS_TERM = "gb-glossary-term";
+  const CLASS_WRAP = "gb-glossary-wrap";
+  const CLASS_POPOVER = "gb-glossary-popover";
 
   document.addEventListener("DOMContentLoaded", async () => {
-    injectTooltipStyles();
+    injectStyles();
 
-    const glossaryUrl = buildGlossaryUrl();
-    const glossary = await loadGlossary(glossaryUrl);
+    const glossary = await loadGlossary();
 
-    if (!glossary.length) return;
-
-    const sourceBlocks = findSourceBlockquotes();
-    if (!sourceBlocks.length) return;
-
-    const sortedEntries = [...glossary].sort((a, b) => b.term.length - a.term.length);
-
-    sourceBlocks.forEach((block) => {
-      applyGlossaryToElement(block, sortedEntries);
-    });
-
-    setupTooltipBehavior();
-  });
-
-  function buildGlossaryUrl() {
-    const script = document.currentScript;
-    const customUrl = script?.dataset?.glossaryUrl;
-
-    if (customUrl) return customUrl;
-
-    const path = window.location.pathname;
-    const heIndex = path.indexOf("/he/");
-
-    if (heIndex !== -1) {
-      const base = path.slice(0, heIndex + 4); // כולל /he/
-      return `${base}${CONFIG.glossaryFileName}`;
+    if (!glossary.length) {
+      return;
     }
 
-    return `/he/${CONFIG.glossaryFileName}`;
-  }
+    const sourceQuotes = Array.from(document.querySelectorAll("blockquote.source-quote"));
 
-  async function loadGlossary(url) {
+    if (!sourceQuotes.length) {
+      return;
+    }
+
+    const entries = glossary.sort((a, b) => b.term.length - a.term.length);
+
+    sourceQuotes.forEach((quote) => {
+      applyGlossaryToElement(quote, entries);
+    });
+
+    setupTooltipClicks();
+  });
+
+  async function loadGlossary() {
     try {
-      const response = await fetch(url, { cache: "no-cache" });
+      const response = await fetch(GLOSSARY_URL, { cache: "no-cache" });
+
       if (!response.ok) {
-        console.warn("לא הצלחתי לטעון את מילון לשון הגמרא:", url);
         return [];
       }
 
       const markdown = await response.text();
-      return parseGlossaryMarkdownTable(markdown);
+      return parseGlossary(markdown);
     } catch (error) {
-      console.warn("שגיאה בטעינת מילון לשון הגמרא:", error);
       return [];
     }
   }
 
-  function parseGlossaryMarkdownTable(markdown) {
+  function parseGlossary(markdown) {
     const lines = markdown
       .split(/\r?\n/)
       .map((line) => line.trim())
-      .filter(Boolean);
+      .filter((line) => line.startsWith("|") && line.endsWith("|"));
 
-    const tableLines = lines.filter((line) => line.startsWith("|") && line.endsWith("|"));
+    if (lines.length < 3) {
+      return [];
+    }
 
-    if (tableLines.length < 3) return [];
+    const header = splitRow(lines[0]);
+    const rows = lines.slice(2);
 
-    const header = splitMarkdownTableRow(tableLines[0]);
-    const dataLines = tableLines.slice(2);
+    const termIndex = header.findIndex((cell) => cell.includes("מילה"));
+    const meaningIndex = header.findIndex((cell) => cell.includes("משמעות"));
+    const structureIndex = header.findIndex((cell) => cell.includes("מבנה"));
 
-    const termIndex = header.findIndex((h) => h.includes("מילה"));
-    const meaningIndex = header.findIndex((h) => h.includes("משמעות"));
-    const structureIndex = header.findIndex((h) => h.includes("מבנה"));
+    if (termIndex === -1 || meaningIndex === -1) {
+      return [];
+    }
 
-    if (termIndex === -1 || meaningIndex === -1) return [];
-
-    return dataLines
-      .map((line) => splitMarkdownTableRow(line))
-      .map((cells) => {
-        const term = cleanMarkdownCell(cells[termIndex] || "");
-        const meaning = cleanMarkdownCell(cells[meaningIndex] || "");
-        const structure = cleanMarkdownCell(cells[structureIndex] || "");
-
-        return { term, meaning, structure };
-      })
+    return rows
+      .map(splitRow)
+      .map((cells) => ({
+        term: cleanCell(cells[termIndex] || ""),
+        meaning: cleanCell(cells[meaningIndex] || ""),
+        structure: cleanCell(cells[structureIndex] || "")
+      }))
       .filter((entry) => entry.term && entry.meaning);
   }
 
-  function splitMarkdownTableRow(line) {
+  function splitRow(line) {
     return line
       .replace(/^\|/, "")
       .replace(/\|$/, "")
@@ -102,38 +86,13 @@
       .map((cell) => cell.trim());
   }
 
-  function cleanMarkdownCell(value) {
+  function cleanCell(value) {
     return value
       .replace(/\*\*/g, "")
       .replace(/<br\s*\/?>/gi, "; ")
       .replace(/&nbsp;/g, " ")
+      .replace(/\u200e|\u200f|\u202a|\u202b|\u202c|\u202d|\u202e/g, "")
       .trim();
-  }
-
-  function findSourceBlockquotes() {
-    const headings = Array.from(document.querySelectorAll("h2, h3"));
-    const sourceHeading = headings.find((heading) =>
-      normalizeText(heading.textContent).includes(CONFIG.sourceHeadingText)
-    );
-
-    if (!sourceHeading) return [];
-
-    const blocks = [];
-    let node = sourceHeading.nextElementSibling;
-
-    while (node) {
-      if (node.matches("h2")) break;
-
-      if (node.matches("blockquote")) {
-        blocks.push(node);
-      }
-
-      blocks.push(...Array.from(node.querySelectorAll?.("blockquote") || []));
-
-      node = node.nextElementSibling;
-    }
-
-    return blocks;
   }
 
   function applyGlossaryToElement(root, entries) {
@@ -142,30 +101,35 @@
       NodeFilter.SHOW_TEXT,
       {
         acceptNode(node) {
-          if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-          if (node.parentElement?.closest(`.${CONFIG.wrapClass}`)) {
+          if (!node.nodeValue || !node.nodeValue.trim()) {
             return NodeFilter.FILTER_REJECT;
           }
+
+          if (node.parentElement && node.parentElement.closest(`.${CLASS_WRAP}`)) {
+            return NodeFilter.FILTER_REJECT;
+          }
+
           return NodeFilter.FILTER_ACCEPT;
         }
       }
     );
 
     const textNodes = [];
+
     while (walker.nextNode()) {
       textNodes.push(walker.currentNode);
     }
 
-    textNodes.forEach((textNode) => {
-      replaceTermsInTextNode(textNode, entries);
-    });
+    textNodes.forEach((node) => replaceInTextNode(node, entries));
   }
 
-  function replaceTermsInTextNode(textNode, entries) {
+  function replaceInTextNode(textNode, entries) {
     const text = textNode.nodeValue;
-    const matches = findNonOverlappingMatches(text, entries);
+    const matches = findMatches(text, entries);
 
-    if (!matches.length) return;
+    if (!matches.length) {
+      return;
+    }
 
     const fragment = document.createDocumentFragment();
     let lastIndex = 0;
@@ -175,7 +139,7 @@
         fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.start)));
       }
 
-      fragment.appendChild(createGlossaryElement(match.entry));
+      fragment.appendChild(createTooltip(match.entry));
       lastIndex = match.end;
     });
 
@@ -186,46 +150,52 @@
     textNode.parentNode.replaceChild(fragment, textNode);
   }
 
-  function findNonOverlappingMatches(text, entries) {
+  function findMatches(text, entries) {
     const matches = [];
 
     entries.forEach((entry) => {
-      let start = 0;
+      let fromIndex = 0;
 
-      while (true) {
-        const index = text.indexOf(entry.term, start);
-        if (index === -1) break;
+      while (fromIndex < text.length) {
+        const index = text.indexOf(entry.term, fromIndex);
+
+        if (index === -1) {
+          break;
+        }
 
         const end = index + entry.term.length;
 
-        const overlaps = matches.some((m) =>
-          (index >= m.start && index < m.end) || (end > m.start && end <= m.end)
-        );
+        const overlaps = matches.some((match) => {
+          return index < match.end && end > match.start;
+        });
 
         if (!overlaps) {
-          matches.push({ start: index, end, entry });
+          matches.push({
+            start: index,
+            end,
+            entry
+          });
         }
 
-        start = end;
+        fromIndex = end;
       }
     });
 
     return matches.sort((a, b) => a.start - b.start);
   }
 
-  function createGlossaryElement(entry) {
+  function createTooltip(entry) {
     const wrap = document.createElement("span");
-    wrap.className = CONFIG.wrapClass;
+    wrap.className = CLASS_WRAP;
 
     const button = document.createElement("button");
     button.type = "button";
-    button.className = CONFIG.termClass;
+    button.className = CLASS_TERM;
     button.textContent = entry.term;
     button.setAttribute("aria-expanded", "false");
 
     const popover = document.createElement("span");
-    popover.className = CONFIG.popoverClass;
-    popover.setAttribute("role", "tooltip");
+    popover.className = CLASS_POPOVER;
     popover.hidden = true;
 
     const title = document.createElement("strong");
@@ -267,9 +237,9 @@
     return wrap;
   }
 
-  function setupTooltipBehavior() {
+  function setupTooltipClicks() {
     document.addEventListener("click", (event) => {
-      const button = event.target.closest(`.${CONFIG.termClass}`);
+      const button = event.target.closest(`.${CLASS_TERM}`);
 
       if (!button) {
         closeAllTooltips();
@@ -279,8 +249,8 @@
       event.preventDefault();
       event.stopPropagation();
 
-      const wrap = button.closest(`.${CONFIG.wrapClass}`);
-      const popover = wrap.querySelector(`.${CONFIG.popoverClass}`);
+      const wrap = button.closest(`.${CLASS_WRAP}`);
+      const popover = wrap.querySelector(`.${CLASS_POPOVER}`);
       const isOpen = button.getAttribute("aria-expanded") === "true";
 
       closeAllTooltips();
@@ -299,24 +269,25 @@
   }
 
   function closeAllTooltips() {
-    document.querySelectorAll(`.${CONFIG.termClass}[aria-expanded="true"]`).forEach((button) => {
+    document.querySelectorAll(`.${CLASS_TERM}`).forEach((button) => {
       button.setAttribute("aria-expanded", "false");
     });
 
-    document.querySelectorAll(`.${CONFIG.popoverClass}`).forEach((popover) => {
+    document.querySelectorAll(`.${CLASS_POPOVER}`).forEach((popover) => {
       popover.hidden = true;
     });
   }
 
-  function injectTooltipStyles() {
+  function injectStyles() {
     const style = document.createElement("style");
+
     style.textContent = `
-      .${CONFIG.wrapClass} {
+      .${CLASS_WRAP} {
         position: relative;
         display: inline-block;
       }
 
-      .${CONFIG.termClass} {
+      .${CLASS_TERM} {
         appearance: none;
         border: 0;
         background: transparent;
@@ -328,13 +299,13 @@
         border-bottom: 2px dotted #3F5F4A;
       }
 
-      .${CONFIG.termClass}:focus {
+      .${CLASS_TERM}:focus {
         outline: 2px solid #C9A86A;
         outline-offset: 3px;
         border-radius: 4px;
       }
 
-      .${CONFIG.popoverClass} {
+      .${CLASS_POPOVER} {
         position: absolute;
         z-index: 50;
         right: 0;
@@ -353,8 +324,8 @@
         white-space: normal;
       }
 
-      .${CONFIG.popoverClass} strong,
-      .${CONFIG.popoverClass} span {
+      .${CLASS_POPOVER} strong,
+      .${CLASS_POPOVER} span {
         display: block;
       }
 
@@ -376,7 +347,7 @@
       }
 
       @media (max-width: 640px) {
-        .${CONFIG.popoverClass} {
+        .${CLASS_POPOVER} {
           position: fixed;
           right: 1rem;
           left: 1rem;
@@ -389,9 +360,5 @@
     `;
 
     document.head.appendChild(style);
-  }
-
-  function normalizeText(value) {
-    return (value || "").replace(/\s+/g, " ").trim();
   }
 })();
