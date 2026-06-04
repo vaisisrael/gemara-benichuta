@@ -7,6 +7,7 @@
   const CLASS_TERM = "gb-glossary-term";
   const CLASS_WRAP = "gb-glossary-wrap";
   const CLASS_POPOVER = "gb-glossary-popover";
+  const CLASS_CLOSE = "gb-glossary-close";
 
   document.addEventListener("DOMContentLoaded", async () => {
     injectStyles();
@@ -24,6 +25,7 @@
     }
 
     const entries = glossary
+      .filter((entry) => !/\s/.test(normalizeHebrew(entry.term))) // מילים בלבד, לא ביטויים
       .map((entry) => ({
         ...entry,
         normalizedTerm: normalizeHebrew(entry.term)
@@ -132,6 +134,17 @@
     return { normalized, map };
   }
 
+  function isHebrewLetter(char) {
+    return /[א-ת]/.test(char || "");
+  }
+
+  function hasWordBoundaries(normalizedText, start, end) {
+    const before = normalizedText[start - 1] || "";
+    const after = normalizedText[end] || "";
+
+    return !isHebrewLetter(before) && !isHebrewLetter(after);
+  }
+
   function applyGlossaryToElement(root, entries) {
     const walker = document.createTreeWalker(
       root,
@@ -202,6 +215,12 @@
         }
 
         const normalizedEnd = index + entry.normalizedTerm.length;
+
+        if (!hasWordBoundaries(normalized, index, normalizedEnd)) {
+          fromIndex = normalizedEnd;
+          continue;
+        }
+
         const originalStart = map[index];
         const originalEnd = map[normalizedEnd - 1] + 1;
 
@@ -238,6 +257,12 @@
     popover.className = CLASS_POPOVER;
     popover.hidden = true;
 
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.className = CLASS_CLOSE;
+    closeButton.setAttribute("aria-label", "סגירת בועית");
+    closeButton.textContent = "×";
+
     const title = document.createElement("strong");
     title.textContent = entry.term;
 
@@ -245,6 +270,7 @@
     meaning.className = "gb-glossary-meaning";
     meaning.textContent = entry.meaning;
 
+    popover.appendChild(closeButton);
     popover.appendChild(title);
     popover.appendChild(meaning);
 
@@ -279,6 +305,15 @@
 
   function setupTooltipClicks() {
     document.addEventListener("click", (event) => {
+      const closeButton = event.target.closest(`.${CLASS_CLOSE}`);
+
+      if (closeButton) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeAllTooltips();
+        return;
+      }
+
       const button = event.target.closest(`.${CLASS_TERM}`);
 
       if (!button) {
@@ -331,12 +366,16 @@
         appearance: none;
         border: 0;
         background: transparent;
-        padding: 0 0.04em;
-        margin: 0;
+        padding: 0 0.03em;
+        margin: 0 0.03em;
         font: inherit;
         color: inherit;
         cursor: pointer;
-        border-bottom: 2px dotted #3F5F4A;
+        text-decoration-line: underline;
+        text-decoration-style: solid;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.11em;
+        text-decoration-color: rgba(63, 95, 74, 0.75);
       }
 
       .${CLASS_TERM}:focus {
@@ -349,9 +388,9 @@
         position: absolute;
         z-index: 50;
         right: 0;
-        top: calc(100% + 0.45rem);
+        top: calc(100% + 0.35rem);
         min-width: 13rem;
-        max-width: 18rem;
+        max-width: min(18rem, 82vw);
         padding: 0.85rem 1rem;
         border: 1px solid #C9A86A;
         border-radius: 12px;
@@ -369,6 +408,27 @@
         display: block;
       }
 
+      .${CLASS_CLOSE} {
+        position: absolute;
+        top: 0.35rem;
+        left: 0.45rem;
+        width: 1.7rem;
+        height: 1.7rem;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: #1F2933;
+        font-size: 1.25rem;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .${CLASS_CLOSE}:focus,
+      .${CLASS_CLOSE}:hover {
+        background: rgba(201, 168, 106, 0.22);
+        outline: none;
+      }
+
       .gb-glossary-meaning {
         margin-top: 0.25rem;
         font-weight: 700;
@@ -384,18 +444,6 @@
       .gb-glossary-structure-label {
         font-weight: 700;
         margin-bottom: 0.2rem;
-      }
-
-      @media (max-width: 640px) {
-        .${CLASS_POPOVER} {
-          position: fixed;
-          right: 1rem;
-          left: 1rem;
-          top: auto;
-          bottom: 1rem;
-          max-width: none;
-          width: auto;
-        }
       }
     `;
 
