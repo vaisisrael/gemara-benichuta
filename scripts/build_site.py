@@ -38,6 +38,7 @@ NAV_ITEMS = [
 ]
 
 HEADING_IDS = {
+    "איפה אנחנו?": "where",
     "מה צריך לדעת לפני שנכנסים?": "before",
     "לשון המקור": "source",
     "במילים פשוטות": "simple",
@@ -46,7 +47,6 @@ HEADING_IDS = {
     "מושגים חדשים": "concepts",
     "מה נשאר ביד": "takeaway",
 }
-
 
 @dataclass
 class Lesson:
