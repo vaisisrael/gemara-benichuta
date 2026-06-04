@@ -342,6 +342,7 @@ def site_footer() -> str:
   <p>© {SITE_NAME}</p>
 </footer>
 <script src="{BASE_PATH}/assets/js/site.js"></script>
+<script src="{BASE_PATH}/assets/js/gemara-glossary-tooltips.js" defer></script>
 </body>
 </html>'''
 
