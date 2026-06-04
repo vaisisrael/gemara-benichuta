@@ -19,10 +19,7 @@
 
     glossary.forEach((entry) => {
       const normalizedTerm = normalizeHebrew(entry.term);
-
-      // עובדים רק עם מילים בודדות, לא עם ביטויים בני כמה מילים.
       if (!normalizedTerm || /\s/.test(normalizedTerm)) return;
-
       glossaryMap.set(normalizedTerm, entry);
     });
 
@@ -266,7 +263,7 @@
       if (!isOpen) {
         button.setAttribute("aria-expanded", "true");
         popover.hidden = false;
-        keepPopoverInsideViewport(popover);
+        positionPopoverNearButton(popover, button);
       }
     });
 
@@ -276,38 +273,43 @@
       }
     });
 
-    window.addEventListener("resize", () => {
-      document.querySelectorAll(`.${CLASS_POPOVER}:not([hidden])`).forEach((popover) => {
-        keepPopoverInsideViewport(popover);
-      });
-    });
+    window.addEventListener("resize", closeAllTooltips);
+    window.addEventListener("scroll", closeAllTooltips, { passive: true });
   }
 
-  function keepPopoverInsideViewport(popover) {
-    popover.style.left = "";
-    popover.style.right = "";
-    popover.style.transform = "";
-
+  function positionPopoverNearButton(popover, button) {
     const margin = 12;
-    const rect = popover.getBoundingClientRect();
+    const buttonRect = button.getBoundingClientRect();
 
-    if (rect.left < margin) {
-      popover.style.left = `${margin}px`;
-      popover.style.right = "auto";
-      popover.style.transform = "none";
-      popover.style.position = "fixed";
-      return;
+    popover.style.position = "fixed";
+    popover.style.width = "";
+    popover.style.maxWidth = "";
+    popover.style.left = "0px";
+    popover.style.right = "auto";
+    popover.style.top = "0px";
+    popover.style.transform = "none";
+
+    const maxWidth = Math.min(288, window.innerWidth - margin * 2);
+    popover.style.width = `${maxWidth}px`;
+    popover.style.maxWidth = `${maxWidth}px`;
+
+    const popoverRect = popover.getBoundingClientRect();
+
+    let left = buttonRect.left + buttonRect.width / 2 - popoverRect.width / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - popoverRect.width - margin));
+
+    let top = buttonRect.bottom + 8;
+
+    if (top + popoverRect.height > window.innerHeight - margin) {
+      top = buttonRect.top - popoverRect.height - 8;
     }
 
-    if (rect.right > window.innerWidth - margin) {
-      popover.style.left = "auto";
-      popover.style.right = `${margin}px`;
-      popover.style.transform = "none";
-      popover.style.position = "fixed";
-      return;
+    if (top < margin) {
+      top = margin;
     }
 
-    popover.style.position = "absolute";
+    popover.style.left = `${left}px`;
+    popover.style.top = `${top}px`;
   }
 
   function closeAllTooltips() {
@@ -317,10 +319,13 @@
 
     document.querySelectorAll(`.${CLASS_POPOVER}`).forEach((popover) => {
       popover.hidden = true;
+      popover.style.position = "";
+      popover.style.width = "";
+      popover.style.maxWidth = "";
       popover.style.left = "";
       popover.style.right = "";
+      popover.style.top = "";
       popover.style.transform = "";
-      popover.style.position = "";
     });
   }
 
@@ -356,12 +361,8 @@
       }
 
       .${CLASS_POPOVER} {
-        position: absolute;
-        z-index: 100;
-        right: 0;
-        top: calc(100% + 0.35rem);
-        min-width: 13rem;
-        max-width: min(18rem, calc(100vw - 24px));
+        position: fixed;
+        z-index: 1000;
         padding: 0.85rem 1rem;
         border: 1px solid #C9A86A;
         border-radius: 12px;
