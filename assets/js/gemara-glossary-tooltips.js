@@ -13,28 +13,26 @@
     injectStyles();
 
     const glossary = await loadGlossary();
+    if (!glossary.length) return;
 
-    if (!glossary.length) {
-      return;
-    }
+    const glossaryMap = new Map();
+
+    glossary.forEach((entry) => {
+      const normalizedTerm = normalizeHebrew(entry.term);
+
+      // עובדים רק עם מילים בודדות, לא עם ביטויים בני כמה מילים
+      if (!normalizedTerm || /\s/.test(normalizedTerm)) return;
+
+      glossaryMap.set(normalizedTerm, entry);
+    });
+
+    if (!glossaryMap.size) return;
 
     const sourceQuotes = Array.from(document.querySelectorAll("blockquote.source-quote"));
-
-    if (!sourceQuotes.length) {
-      return;
-    }
-
-    const entries = glossary
-      .filter((entry) => !/\s/.test(normalizeHebrew(entry.term))) // מילים בלבד, לא ביטויים
-      .map((entry) => ({
-        ...entry,
-        normalizedTerm: normalizeHebrew(entry.term)
-      }))
-      .filter((entry) => entry.normalizedTerm)
-      .sort((a, b) => b.normalizedTerm.length - a.normalizedTerm.length);
+    if (!sourceQuotes.length) return;
 
     sourceQuotes.forEach((quote) => {
-      applyGlossaryToElement(quote, entries);
+      applyGlossaryToElement(quote, glossaryMap);
     });
 
     setupTooltipClicks();
@@ -43,10 +41,7 @@
   async function loadGlossary() {
     try {
       const response = await fetch(GLOSSARY_URL, { cache: "no-cache" });
-
-      if (!response.ok) {
-        return [];
-      }
+      if (!response.ok) return [];
 
       const markdown = await response.text();
       return parseGlossary(markdown);
@@ -61,9 +56,7 @@
       .map((line) => line.trim())
       .filter((line) => line.startsWith("|") && line.endsWith("|"));
 
-    if (lines.length < 3) {
-      return [];
-    }
+    if (lines.length < 3) return [];
 
     const header = splitRow(lines[0]);
     const rows = lines.slice(2);
@@ -72,9 +65,7 @@
     const meaningIndex = header.findIndex((cell) => cell.includes("משמעות"));
     const structureIndex = header.findIndex((cell) => cell.includes("מבנה"));
 
-    if (termIndex === -1 || meaningIndex === -1) {
-      return [];
-    }
+    if (termIndex === -1 || meaningIndex === -1) return [];
 
     return rows
       .map(splitRow)
@@ -112,40 +103,7 @@
       .trim();
   }
 
-  function normalizeWithMap(value) {
-    let normalized = "";
-    const map = [];
-
-    for (let i = 0; i < value.length; i += 1) {
-      const char = value[i];
-      const clean = normalizeHebrew(char);
-
-      if (!clean) {
-        continue;
-      }
-
-      normalized += clean;
-
-      for (let j = 0; j < clean.length; j += 1) {
-        map.push(i);
-      }
-    }
-
-    return { normalized, map };
-  }
-
-  function isHebrewLetter(char) {
-    return /[א-ת]/.test(char || "");
-  }
-
-  function hasWordBoundaries(normalizedText, start, end) {
-    const before = normalizedText[start - 1] || "";
-    const after = normalizedText[end] || "";
-
-    return !isHebrewLetter(before) && !isHebrewLetter(after);
-  }
-
-  function applyGlossaryToElement(root, entries) {
+  function applyGlossaryToElement(root, glossaryMap) {
     const walker = document.createTreeWalker(
       root,
       NodeFilter.SHOW_TEXT,
@@ -165,82 +123,54 @@
     );
 
     const textNodes = [];
-
     while (walker.nextNode()) {
       textNodes.push(walker.currentNode);
     }
 
-    textNodes.forEach((node) => replaceInTextNode(node, entries));
+    textNodes.forEach((textNode) => {
+      replaceWordsInTextNode(textNode, glossaryMap);
+    });
   }
 
-  function replaceInTextNode(textNode, entries) {
+  function replaceWordsInTextNode(textNode, glossaryMap) {
     const text = textNode.nodeValue;
-    const matches = findMatches(text, entries);
+    const wordRegex = /[א-ת\u0591-\u05C7]+/g;
 
-    if (!matches.length) {
-      return;
-    }
+    let match;
+    let lastIndex = 0;
+    let changed = false;
 
     const fragment = document.createDocumentFragment();
-    let lastIndex = 0;
 
-    matches.forEach((match) => {
-      if (match.start > lastIndex) {
-        fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.start)));
+    while ((match = wordRegex.exec(text)) !== null) {
+      const word = match[0];
+      const start = match.index;
+      const end = start + word.length;
+
+      if (start > lastIndex) {
+        fragment.appendChild(document.createTextNode(text.slice(lastIndex, start)));
       }
 
-      fragment.appendChild(createTooltip(match.entry, text.slice(match.start, match.end)));
-      lastIndex = match.end;
-    });
+      const normalizedWord = normalizeHebrew(word);
+      const entry = glossaryMap.get(normalizedWord);
+
+      if (entry) {
+        fragment.appendChild(createTooltip(entry, word));
+        changed = true;
+      } else {
+        fragment.appendChild(document.createTextNode(word));
+      }
+
+      lastIndex = end;
+    }
+
+    if (!changed) return;
 
     if (lastIndex < text.length) {
       fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
     }
 
     textNode.parentNode.replaceChild(fragment, textNode);
-  }
-
-  function findMatches(text, entries) {
-    const { normalized, map } = normalizeWithMap(text);
-    const matches = [];
-
-    entries.forEach((entry) => {
-      let fromIndex = 0;
-
-      while (fromIndex < normalized.length) {
-        const index = normalized.indexOf(entry.normalizedTerm, fromIndex);
-
-        if (index === -1) {
-          break;
-        }
-
-        const normalizedEnd = index + entry.normalizedTerm.length;
-
-        if (!hasWordBoundaries(normalized, index, normalizedEnd)) {
-          fromIndex = normalizedEnd;
-          continue;
-        }
-
-        const originalStart = map[index];
-        const originalEnd = map[normalizedEnd - 1] + 1;
-
-        const overlaps = matches.some((match) => {
-          return originalStart < match.end && originalEnd > match.start;
-        });
-
-        if (!overlaps) {
-          matches.push({
-            start: originalStart,
-            end: originalEnd,
-            entry
-          });
-        }
-
-        fromIndex = normalizedEnd;
-      }
-    });
-
-    return matches.sort((a, b) => a.start - b.start);
   }
 
   function createTooltip(entry, displayedTerm) {
@@ -367,14 +297,14 @@
         border: 0;
         background: transparent;
         padding: 0 0.03em;
-        margin: 0 0.03em;
+        margin: 0 0.04em;
         font: inherit;
         color: inherit;
         cursor: pointer;
         text-decoration-line: underline;
         text-decoration-style: solid;
         text-decoration-thickness: 1px;
-        text-underline-offset: 0.11em;
+        text-underline-offset: 0.2em;
         text-decoration-color: rgba(63, 95, 74, 0.75);
       }
 
@@ -444,6 +374,15 @@
       .gb-glossary-structure-label {
         font-weight: 700;
         margin-bottom: 0.2rem;
+      }
+
+      @media (max-width: 640px) {
+        .${CLASS_POPOVER} {
+          right: auto;
+          left: 50%;
+          transform: translateX(-50%);
+          width: min(18rem, calc(100vw - 2rem));
+        }
       }
     `;
 
