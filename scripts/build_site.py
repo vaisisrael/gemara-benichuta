@@ -33,7 +33,7 @@ GA_MEASUREMENT_ID = "G-BBYFSSTE1Z"
 NAV_ITEMS = [
     ("בית", f"{BASE_PATH}/he/"),
     ("שיעורים", f"{BASE_PATH}/he/lessons/"),
-    ("איך לומדים כאן?", f"{BASE_PATH}/he/how.html"),
+    ("איך לומדים כאן?", f"{BASE_PATH}/he/how-to-learn.html"),
     ("אודות", f"{BASE_PATH}/he/about.html"),
 ]
 
@@ -41,12 +41,9 @@ HEADING_IDS = {
     "מה צריך לדעת לפני שנכנסים?": "before",
     "לשון המקור": "source",
     "במילים פשוטות": "simple",
-    "מה עומד מאחורי שאלת הפתיחה?": "question-behind",
     "איך הסוגיה חושבת?": "thinking",
     "פוגשים את הדף": "daf",
     "מושגים חדשים": "concepts",
-    "מילון ארמית קצר": "aramaic",
-    "בודקים שהבנו": "check",
     "מה נשאר ביד": "takeaway",
 }
 
