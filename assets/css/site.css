@@ -196,7 +196,7 @@ a:hover{text-decoration:underline}
 
   /*
     Mobile lesson navigation:
-    - closed state: a small "בתוך השיעור" button at bottom
+    - closed state: a small "בתוך השיעור" button near the top header
     - open state: right-side drawer
     - no automatic open on lesson load
   */
@@ -240,10 +240,11 @@ a:hover{text-decoration:underline}
 
   .lesson-toc details:not([open]){
     position:fixed;
-    inset-inline-end:16px;
-    bottom:18px;
+    inset-inline-end:86px;
+    top:12px;
     width:max-content;
-    max-width:calc(100vw - 32px);
+    max-width:calc(100vw - 120px);
+    z-index:75;
   }
 
   .lesson-toc details:not([open]) summary{
