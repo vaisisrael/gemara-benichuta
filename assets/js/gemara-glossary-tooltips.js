@@ -23,7 +23,13 @@
       return;
     }
 
-    const entries = glossary.sort((a, b) => b.term.length - a.term.length);
+    const entries = glossary
+      .map((entry) => ({
+        ...entry,
+        normalizedTerm: normalizeHebrew(entry.term)
+      }))
+      .filter((entry) => entry.normalizedTerm)
+      .sort((a, b) => b.normalizedTerm.length - a.normalizedTerm.length);
 
     sourceQuotes.forEach((quote) => {
       applyGlossaryToElement(quote, entries);
@@ -95,6 +101,37 @@
       .trim();
   }
 
+  function normalizeHebrew(value) {
+    return value
+      .normalize("NFD")
+      .replace(/[\u0591-\u05C7]/g, "")
+      .replace(/\u200e|\u200f|\u202a|\u202b|\u202c|\u202d|\u202e/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function normalizeWithMap(value) {
+    let normalized = "";
+    const map = [];
+
+    for (let i = 0; i < value.length; i += 1) {
+      const char = value[i];
+      const clean = normalizeHebrew(char);
+
+      if (!clean) {
+        continue;
+      }
+
+      normalized += clean;
+
+      for (let j = 0; j < clean.length; j += 1) {
+        map.push(i);
+      }
+    }
+
+    return { normalized, map };
+  }
+
   function applyGlossaryToElement(root, entries) {
     const walker = document.createTreeWalker(
       root,
@@ -139,7 +176,7 @@
         fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.start)));
       }
 
-      fragment.appendChild(createTooltip(match.entry));
+      fragment.appendChild(createTooltip(match.entry, text.slice(match.start, match.end)));
       lastIndex = match.end;
     });
 
@@ -151,47 +188,50 @@
   }
 
   function findMatches(text, entries) {
+    const { normalized, map } = normalizeWithMap(text);
     const matches = [];
 
     entries.forEach((entry) => {
       let fromIndex = 0;
 
-      while (fromIndex < text.length) {
-        const index = text.indexOf(entry.term, fromIndex);
+      while (fromIndex < normalized.length) {
+        const index = normalized.indexOf(entry.normalizedTerm, fromIndex);
 
         if (index === -1) {
           break;
         }
 
-        const end = index + entry.term.length;
+        const normalizedEnd = index + entry.normalizedTerm.length;
+        const originalStart = map[index];
+        const originalEnd = map[normalizedEnd - 1] + 1;
 
         const overlaps = matches.some((match) => {
-          return index < match.end && end > match.start;
+          return originalStart < match.end && originalEnd > match.start;
         });
 
         if (!overlaps) {
           matches.push({
-            start: index,
-            end,
+            start: originalStart,
+            end: originalEnd,
             entry
           });
         }
 
-        fromIndex = end;
+        fromIndex = normalizedEnd;
       }
     });
 
     return matches.sort((a, b) => a.start - b.start);
   }
 
-  function createTooltip(entry) {
+  function createTooltip(entry, displayedTerm) {
     const wrap = document.createElement("span");
     wrap.className = CLASS_WRAP;
 
     const button = document.createElement("button");
     button.type = "button";
     button.className = CLASS_TERM;
-    button.textContent = entry.term;
+    button.textContent = displayedTerm;
     button.setAttribute("aria-expanded", "false");
 
     const popover = document.createElement("span");
