@@ -33,7 +33,6 @@ GA_MEASUREMENT_ID = "G-BBYFSSTE1Z"
 NAV_ITEMS = [
     ("בית", f"{BASE_PATH}/he/"),
     ("שיעורים", f"{BASE_PATH}/he/lessons/"),
-    ("מפת מושגים", f"{BASE_PATH}/he/concepts.html"),
     ("איך לומדים כאן?", f"{BASE_PATH}/he/how.html"),
     ("אודות", f"{BASE_PATH}/he/about.html"),
 ]
