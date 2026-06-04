@@ -391,7 +391,7 @@ def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str
 <main class="lesson-layout">
   <aside class="lesson-toc" aria-label="ניווט בתוך השיעור">
     <details open>
-      <summary>בתוך השיעור</summary>
+      <summary>ניווט</summary>
       <nav>
         {toc_links}
       </nav>
