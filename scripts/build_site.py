@@ -185,50 +185,30 @@ def split_blocks(markdown: str) -> list[str]:
 
 def render_daf_cards(meta: dict[str, str]) -> str:
     cards: list[str] = []
-    source_ref = meta.get("source_ref", "דף הגמרא")
 
     for index in range(1, 5):
-        file_name = meta.get(f"daf_file_{index}", "").strip()
-        if not file_name:
+        external_url = meta.get(f"daf_external_url_{index}", "").strip()
+        if not external_url:
             continue
 
         caption = meta.get(
             f"daf_caption_{index}",
-            f"הקטע שלמדנו נמצא ב{source_ref}. אין צורך להבין את כל הדף; חשוב רק לזהות את מקום הקטע הנלמד.",
+            "הקטע שלמדנו נמצא בדף הגמרא. אפשר לפתוח את הדף המלא באתר פורטל הדף היומי.",
         ).strip()
 
-        marks = meta.get(f"daf_marks_{index}", "").strip()
-        alt = meta.get(
-            f"daf_alt_{index}",
-            f"{source_ref}, עם סימון הקטע הנלמד",
-        ).strip()
-
-        escaped_file = html.escape(file_name, quote=True)
-        escaped_caption = html.escape(caption, quote=True)
-        escaped_marks = html.escape(marks, quote=True)
-        escaped_alt = html.escape(alt, quote=True)
+        escaped_url = html.escape(external_url, quote=True)
+        caption_html = inline_markdown(caption)
 
         cards.append(
-            f'<div class="daf-card" data-daf-file="{escaped_file}" '
-            f'data-daf-caption="{escaped_caption}" '
-            f'data-daf-alt="{escaped_alt}" '
-            f'data-daf-marks="{escaped_marks}">'
+            '<div class="daf-card daf-external-card">'
             "<figure>"
-            f'<p class="missing-note">עדיין לא נמצא קובץ דף בשם <code>{html.escape(file_name)}</code>. '
-            "לאחר שיונח בתיקייה <code>assets/daf/</code>, הוא יופיע כאן אוטומטית.</p>"
-            "</figure></div>"
-        )
-
-    # Backward compatibility for the old field: daf_image: "001"
-    if not cards and meta.get("daf_image"):
-        daf_name = html.escape(meta.get("daf_image", ""), quote=True)
-        daf_alt = html.escape(f"{source_ref}, עם סימון הקטע הנלמד", quote=True)
-        cards.append(
-            f'<div class="daf-card" data-daf-image="{daf_name}" data-daf-alt="{daf_alt}">'
-            "<figure><picture></picture><figcaption></figcaption>"
-            f'<p class="missing-note">עדיין לא נמצאה תמונת דף בשם <code>{daf_name}.webp</code> או <code>{daf_name}.png</code>. '
-            "לאחר שתונח בתיקייה, היא תופיע כאן אוטומטית.</p>"
-            "</figure></div>"
+            f'<p class="daf-external-caption">{caption_html}</p>'
+            f'<p><a class="button secondary" href="{escaped_url}" target="_blank" rel="noopener">'
+            "פתחו את הדף באתר פורטל הדף היומי"
+            "</a></p>"
+            '<figcaption>הקישור נפתח באתר חיצוני. אין צורך להבין את כל הדף; המטרה היא לראות היכן נמצא הקטע שלמדנו.</figcaption>'
+            "</figure>"
+            "</div>"
         )
 
     return "\n".join(cards)
