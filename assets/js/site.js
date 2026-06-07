@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const BASE_PATH = '/gemara-benichuta';
+
   const btn = document.querySelector('.menu-toggle');
   const nav = document.querySelector('#main-nav');
 
@@ -180,40 +182,146 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  document.querySelectorAll('.daf-card[data-daf-image]').forEach((card) => {
-    const name = card.dataset.dafImage;
-    const alt = card.dataset.dafAlt || '';
-    const candidates = [
-      `/gemara-benichuta/assets/daf/${name}.webp`,
-      `/gemara-benichuta/assets/daf/${name}.png`
-    ];
+  function buildDafUrl(fileName) {
+    return `${BASE_PATH}/assets/daf/${encodeURIComponent(fileName)}`;
+  }
 
+  function getFileExtension(fileName) {
+    const cleanName = String(fileName || '').split('?')[0].split('#')[0];
+    const dotIndex = cleanName.lastIndexOf('.');
+    return dotIndex >= 0 ? cleanName.slice(dotIndex + 1).toLowerCase() : '';
+  }
+
+  function parseMarks(rawMarks) {
+    if (!rawMarks) return [];
+
+    return rawMarks
+      .split(';')
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map((item) => item.split(',').map((part) => Number(part.trim())))
+      .filter((parts) => parts.length === 4 && parts.every((value) => Number.isFinite(value)))
+      .map(([left, top, width, height]) => ({ left, top, width, height }));
+  }
+
+  function addMarks(wrapper, rawMarks) {
+    const marks = parseMarks(rawMarks);
+    if (!marks.length) return;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'daf-marks-layer';
+
+    marks.forEach((mark) => {
+      const el = document.createElement('span');
+      el.className = 'daf-mark';
+      el.style.left = `${mark.left}%`;
+      el.style.top = `${mark.top}%`;
+      el.style.width = `${mark.width}%`;
+      el.style.height = `${mark.height}%`;
+      overlay.appendChild(el);
+    });
+
+    wrapper.appendChild(overlay);
+  }
+
+  function renderImageDaf(card, fileName, alt, caption, marks) {
     const figure = card.querySelector('figure');
+    const url = buildDafUrl(fileName);
 
-    const tryImage = (index) => {
-      if (index >= candidates.length) {
-        card.classList.add('is-missing');
+    const img = new Image();
+
+    img.onload = () => {
+      img.alt = alt;
+      img.loading = 'lazy';
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'daf-display daf-image-display';
+      wrapper.appendChild(img);
+      addMarks(wrapper, marks);
+
+      figure.innerHTML = '';
+      figure.appendChild(wrapper);
+
+      const cap = document.createElement('figcaption');
+      cap.textContent = caption;
+      figure.appendChild(cap);
+    };
+
+    img.onerror = () => {
+      card.classList.add('is-missing');
+    };
+
+    img.src = url;
+  }
+
+  function renderPdfDaf(card, fileName, caption, marks) {
+    const figure = card.querySelector('figure');
+    const url = buildDafUrl(fileName);
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'daf-display daf-pdf-display';
+
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.title = caption || fileName;
+    iframe.loading = 'lazy';
+
+    wrapper.appendChild(iframe);
+    addMarks(wrapper, marks);
+
+    figure.innerHTML = '';
+    figure.appendChild(wrapper);
+
+    const cap = document.createElement('figcaption');
+    cap.textContent = caption;
+    figure.appendChild(cap);
+  }
+
+  document.querySelectorAll('.daf-card').forEach((card) => {
+    const fileName = card.dataset.dafFile;
+    const legacyName = card.dataset.dafImage;
+    const caption = card.dataset.dafCaption || 'תמונת הדף הנלמד.';
+    const alt = card.dataset.dafAlt || caption;
+    const marks = card.dataset.dafMarks || '';
+
+    if (fileName) {
+      const extension = getFileExtension(fileName);
+
+      if (extension === 'pdf') {
+        renderPdfDaf(card, fileName, caption, marks);
         return;
       }
 
-      const img = new Image();
+      if (['webp', 'png', 'jpg', 'jpeg'].includes(extension)) {
+        renderImageDaf(card, fileName, alt, caption, marks);
+        return;
+      }
 
-      img.onload = () => {
-        img.alt = alt;
-        img.loading = 'lazy';
-        figure.innerHTML = '';
-        figure.appendChild(img);
+      card.classList.add('is-missing');
+      return;
+    }
 
-        const cap = document.createElement('figcaption');
-        cap.textContent = `תמונת הדף לשיעור ${name}.
-אין צורך להבין את כל הדף; הסימון מצביע על הקטע הנלמד.`;
-        figure.appendChild(cap);
+    // Backward compatibility for the old metadata field: daf_image: "001"
+    if (legacyName) {
+      const candidates = [`${legacyName}.webp`, `${legacyName}.png`];
+      let index = 0;
+
+      const tryNext = () => {
+        if (index >= candidates.length) {
+          card.classList.add('is-missing');
+          return;
+        }
+
+        const candidate = candidates[index];
+        index += 1;
+
+        const testImg = new Image();
+        testImg.onload = () => renderImageDaf(card, candidate, alt, caption, marks);
+        testImg.onerror = tryNext;
+        testImg.src = buildDafUrl(candidate);
       };
 
-      img.onerror = () => tryImage(index + 1);
-      img.src = candidates[index];
-    };
-
-    tryImage(0);
+      tryNext();
+    }
   });
 });
