@@ -80,12 +80,87 @@ a:hover{text-decoration:underline}
 .question{background:var(--bg);border-radius:16px;padding:12px 16px}
 .question span{font-weight:700;color:var(--brand)}
 
-.daf-card{background:var(--bg);border:1px solid rgba(201,168,106,.55);border-radius:20px;padding:16px;margin:10px 0 28px}
-.daf-card img{width:100%;height:auto;border-radius:14px;background:#eee}
-.daf-card figcaption{font-size:16px;color:var(--muted);line-height:1.6}
-.daf-card .missing-note{display:none;font-size:16px;color:var(--muted);margin:0}
-.daf-card.is-missing picture,.daf-card.is-missing figcaption{display:none}
-.daf-card.is-missing .missing-note{display:block}
+/* פוגשים את הדף */
+.daf-card{
+  background:var(--bg);
+  border:1px solid rgba(201,168,106,.55);
+  border-radius:20px;
+  padding:18px;
+  margin:10px 0 28px;
+}
+
+.daf-card figure{
+  margin:0;
+}
+
+.daf-display{
+  position:relative;
+  width:100%;
+  overflow:hidden;
+  border-radius:14px;
+  background:#eee;
+  border:1px solid rgba(63,95,74,.14);
+}
+
+.daf-image-display img{
+  display:block;
+  width:100%;
+  height:auto;
+}
+
+.daf-pdf-display{
+  height:min(78vh,860px);
+  min-height:620px;
+}
+
+.daf-pdf-display iframe{
+  display:block;
+  width:100%;
+  height:100%;
+  border:0;
+  background:#fff;
+}
+
+.daf-marks-layer{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:2;
+}
+
+.daf-mark{
+  position:absolute;
+  display:block;
+  background:rgba(201,168,106,.32);
+  border:1px solid rgba(201,168,106,.46);
+  border-radius:4px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.18) inset;
+}
+
+.daf-card figcaption{
+  margin-top:10px;
+  font-size:16px;
+  color:var(--muted);
+  line-height:1.6;
+  text-align:center;
+}
+
+.daf-card .missing-note{
+  display:none;
+  font-size:16px;
+  color:var(--muted);
+  margin:0;
+}
+
+.daf-card.is-missing .daf-display,
+.daf-card.is-missing picture,
+.daf-card.is-missing figcaption{
+  display:none;
+}
+
+.daf-card.is-missing .missing-note{
+  display:block;
+}
 
 .lesson-signup{
   display:flex;
@@ -192,6 +267,27 @@ a:hover{text-decoration:underline}
   .lesson-signup{
     margin-top:36px;
     padding:18px;
+  }
+
+  .daf-card{
+    margin:8px -6px 26px;
+    padding:10px;
+    border-radius:18px;
+  }
+
+  .daf-display{
+    border-radius:12px;
+  }
+
+  .daf-pdf-display{
+    height:72vh;
+    min-height:520px;
+  }
+
+  .daf-card figcaption{
+    font-size:15px;
+    line-height:1.55;
+    padding-inline:4px;
   }
 
   /*
@@ -341,4 +437,11 @@ a:hover{text-decoration:underline}
   .lesson-number{min-height:58px}
   .hero{text-align:right}
   .hero-actions{justify-content:flex-start}
+}
+
+@media (max-width:520px){
+  .daf-pdf-display{
+    height:68vh;
+    min-height:440px;
+  }
 }
