@@ -20,7 +20,6 @@ import shutil
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
@@ -47,6 +46,7 @@ HEADING_IDS = {
     "מושגים חדשים": "concepts",
     "מה נשאר ביד": "takeaway",
 }
+
 
 @dataclass
 class Lesson:
@@ -102,7 +102,9 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
             continue
         key, value = line.split(":", 1)
         value = value.strip()
-        if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
+        if (value.startswith('"') and value.endswith('"')) or (
+            value.startswith("'") and value.endswith("'")
+        ):
             value = value[1:-1]
         meta[key.strip()] = value
     return meta, body.strip()
@@ -132,7 +134,9 @@ def inline_markdown(text: str) -> str:
     text = re.sub(r"`([^`]+)`", lambda m: stash(f"<code>{m.group(1)}</code>"), text)
     text = re.sub(
         r"\[([^\]]+)\]\(([^)]+)\)",
-        lambda m: stash(f'<a href="{html.escape(m.group(2), quote=True)}">{m.group(1)}</a>'),
+        lambda m: stash(
+            f'<a href="{html.escape(m.group(2), quote=True)}">{m.group(1)}</a>'
+        ),
         text,
     )
     text = re.sub(r"\*\*(.+?)\*\*", lambda m: stash(f"<strong>{m.group(1)}</strong>"), text)
@@ -179,6 +183,57 @@ def split_blocks(markdown: str) -> list[str]:
     return blocks
 
 
+def render_daf_cards(meta: dict[str, str]) -> str:
+    cards: list[str] = []
+    source_ref = meta.get("source_ref", "דף הגמרא")
+
+    for index in range(1, 5):
+        file_name = meta.get(f"daf_file_{index}", "").strip()
+        if not file_name:
+            continue
+
+        caption = meta.get(
+            f"daf_caption_{index}",
+            f"הקטע שלמדנו נמצא ב{source_ref}. אין צורך להבין את כל הדף; חשוב רק לזהות את מקום הקטע הנלמד.",
+        ).strip()
+
+        marks = meta.get(f"daf_marks_{index}", "").strip()
+        alt = meta.get(
+            f"daf_alt_{index}",
+            f"{source_ref}, עם סימון הקטע הנלמד",
+        ).strip()
+
+        escaped_file = html.escape(file_name, quote=True)
+        escaped_caption = html.escape(caption, quote=True)
+        escaped_marks = html.escape(marks, quote=True)
+        escaped_alt = html.escape(alt, quote=True)
+
+        cards.append(
+            f'<div class="daf-card" data-daf-file="{escaped_file}" '
+            f'data-daf-caption="{escaped_caption}" '
+            f'data-daf-alt="{escaped_alt}" '
+            f'data-daf-marks="{escaped_marks}">'
+            "<figure>"
+            f'<p class="missing-note">עדיין לא נמצא קובץ דף בשם <code>{html.escape(file_name)}</code>. '
+            "לאחר שיונח בתיקייה <code>assets/daf/</code>, הוא יופיע כאן אוטומטית.</p>"
+            "</figure></div>"
+        )
+
+    # Backward compatibility for the old field: daf_image: "001"
+    if not cards and meta.get("daf_image"):
+        daf_name = html.escape(meta.get("daf_image", ""), quote=True)
+        daf_alt = html.escape(f"{source_ref}, עם סימון הקטע הנלמד", quote=True)
+        cards.append(
+            f'<div class="daf-card" data-daf-image="{daf_name}" data-daf-alt="{daf_alt}">'
+            "<figure><picture></picture><figcaption></figcaption>"
+            f'<p class="missing-note">עדיין לא נמצאה תמונת דף בשם <code>{daf_name}.webp</code> או <code>{daf_name}.png</code>. '
+            "לאחר שתונח בתיקייה, היא תופיע כאן אוטומטית.</p>"
+            "</figure></div>"
+        )
+
+    return "\n".join(cards)
+
+
 def render_markdown(body: str, meta: dict[str, str]) -> tuple[str, list[tuple[str, str]]]:
     blocks = split_blocks(body)
     used_ids: set[str] = {"lesson-top"}
@@ -187,7 +242,6 @@ def render_markdown(body: str, meta: dict[str, str]) -> tuple[str, list[tuple[st
     open_section = False
     title_seen = False
     kicker_seen = False
-    daf_inserted = False
 
     def close_section() -> None:
         nonlocal open_section
@@ -221,17 +275,12 @@ def render_markdown(body: str, meta: dict[str, str]) -> tuple[str, list[tuple[st
             out.append(f'<section class="lesson-section" id="{section_id}">')
             out.append(f"<h2>{inline_markdown(text)}</h2>")
             open_section = True
-            if text == "פוגשים את הדף" and meta.get("daf_image"):
-                daf_inserted = True
-                daf_name = html.escape(meta.get("daf_image", ""), quote=True)
-                source_ref = meta.get("source_ref", "דף הגמרא")
-                daf_alt = html.escape(f"{source_ref}, עם סימון הקטע הנלמד", quote=True)
-                out.append(
-                    f'<div class="daf-card" data-daf-image="{daf_name}" data-daf-alt="{daf_alt}">'
-                    '<figure><picture></picture><figcaption></figcaption>'
-                    f'<p class="missing-note">עדיין לא נמצאה תמונת דף בשם <code>{daf_name}.webp</code> או <code>{daf_name}.png</code>. לאחר שתונח בתיקייה, היא תופיע כאן אוטומטית.</p>'
-                    '</figure></div>'
-                )
+
+            if text == "פוגשים את הדף":
+                daf_cards = render_daf_cards(meta)
+                if daf_cards:
+                    out.append(daf_cards)
+
             continue
 
         if block.startswith(">"):
@@ -299,7 +348,11 @@ def html_head(title: str, meta: dict[str, str] | None = None) -> str:
     og_title = meta.get("og_title") or meta.get("title") or title
     og_desc = meta.get("og_description") or desc
     og_image = meta.get("og_image") or default_og_image(meta)
-    og_image_tag = f'<meta property="og:image" content="{html.escape(BASE_PATH + og_image if og_image.startswith("/") else og_image, quote=True)}">' if og_image else ""
+    og_image_tag = (
+        f'<meta property="og:image" content="{html.escape(BASE_PATH + og_image if og_image.startswith("/") else og_image, quote=True)}">'
+        if og_image
+        else ""
+    )
     return f'''<!doctype html>
 <html lang="he" dir="rtl">
 <head>
@@ -363,7 +416,7 @@ def render_lesson_bottom_nav(next_lesson: Lesson | None) -> str:
         next_link = (
             f'<a href="{lesson_href(next_lesson)}">'
             f'לשיעור הבא: שיעור {next_number} — {next_title}'
-            f'</a>'
+            f"</a>"
         )
     else:
         next_link = "<span>השיעור הבא יתווסף בהמשך</span>"
@@ -378,7 +431,10 @@ def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str
     meta = lesson.meta
     title = meta.get("title", "שיעור")
     lesson_number = meta.get("lesson_number", "")
-    toc_links = "\n".join(f'<a href="#{section_id}">{html.escape(label)}</a>' for section_id, label in lesson.toc)
+    toc_links = "\n".join(
+        f'<a href="#{section_id}">{html.escape(label)}</a>'
+        for section_id, label in lesson.toc
+    )
     prev_next = render_lesson_bottom_nav(next_lesson)
     whatsapp_signup = whatsapp_signup_html()
     return f'''{html_head(f"שיעור {lesson_number} — {title}", meta)}
