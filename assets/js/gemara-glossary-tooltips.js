@@ -2,8 +2,9 @@
   "use strict";
 
   const BASE_PATH = "/gemara-benichuta";
-  const GLOSSARY_URL = `${BASE_PATH}/he/מילון_לשון_הגמרא.md`;
+  const GLOSSARY_URL = `${BASE_PATH}/he/מילון.md`;
 
+  const CLASS_SOURCE_TERM = "glossary-term";
   const CLASS_TERM = "gb-glossary-term";
   const CLASS_WRAP = "gb-glossary-wrap";
   const CLASS_POPOVER = "gb-glossary-popover";
@@ -13,24 +14,22 @@
     injectStyles();
 
     const glossary = await loadGlossary();
-    if (!glossary.length) return;
-
-    const glossaryMap = new Map();
+    const glossaryById = new Map();
 
     glossary.forEach((entry) => {
-      const normalizedTerm = normalizeHebrew(entry.term);
-      if (!normalizedTerm || /\s/.test(normalizedTerm)) return;
-      glossaryMap.set(normalizedTerm, entry);
+      if (entry.id) {
+        glossaryById.set(entry.id, entry);
+      }
     });
 
-    if (!glossaryMap.size) return;
+    const markedTerms = Array.from(
+      document.querySelectorAll(`.${CLASS_SOURCE_TERM}[data-glossary-id]`)
+    );
 
-    const sourceQuotes = Array.from(document.querySelectorAll("blockquote.source-quote"));
-    if (!sourceQuotes.length) return;
+    if (!markedTerms.length) return;
 
-    sourceQuotes.forEach((quote) => {
-      const usedTermsInThisQuote = new Set();
-      applyGlossaryToElement(quote, glossaryMap, usedTermsInThisQuote);
+    markedTerms.forEach((termElement) => {
+      replaceMarkedTermWithTooltip(termElement, glossaryById);
     });
 
     setupTooltipClicks();
@@ -59,20 +58,20 @@
     const header = splitRow(lines[0]);
     const rows = lines.slice(2);
 
+    const idIndex = header.findIndex((cell) => cell === "ID");
     const termIndex = header.findIndex((cell) => cell.includes("מילה"));
-    const meaningIndex = header.findIndex((cell) => cell.includes("משמעות"));
-    const structureIndex = header.findIndex((cell) => cell.includes("מבנה"));
+    const meaningIndex = header.findIndex((cell) => cell.includes("פירוש"));
 
-    if (termIndex === -1 || meaningIndex === -1) return [];
+    if (idIndex === -1 || termIndex === -1 || meaningIndex === -1) return [];
 
     return rows
       .map(splitRow)
       .map((cells) => ({
+        id: cleanCell(cells[idIndex] || ""),
         term: cleanCell(cells[termIndex] || ""),
-        meaning: cleanCell(cells[meaningIndex] || ""),
-        structure: cleanCell(cells[structureIndex] || "")
+        meaning: cleanCell(cells[meaningIndex] || "")
       }))
-      .filter((entry) => entry.term && entry.meaning);
+      .filter((entry) => entry.id && entry.term && entry.meaning);
   }
 
   function splitRow(line) {
@@ -92,85 +91,34 @@
       .trim();
   }
 
-  function normalizeHebrew(value) {
-    return value
-      .normalize("NFD")
-      .replace(/[\u0591-\u05C7]/g, "")
-      .replace(/\u200e|\u200f|\u202a|\u202b|\u202c|\u202d|\u202e/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
+  function replaceMarkedTermWithTooltip(termElement, glossaryById) {
+    const glossaryId = termElement.getAttribute("data-glossary-id") || "";
+    const displayedTerm = termElement.textContent || "";
 
-  function applyGlossaryToElement(root, glossaryMap, usedTermsInThisQuote) {
-    const walker = document.createTreeWalker(
-      root,
-      NodeFilter.SHOW_TEXT,
-      {
-        acceptNode(node) {
-          if (!node.nodeValue || !node.nodeValue.trim()) {
-            return NodeFilter.FILTER_REJECT;
-          }
+    const entryFromGlossary = glossaryById.get(glossaryId);
 
-          if (node.parentElement && node.parentElement.closest(`.${CLASS_WRAP}`)) {
-            return NodeFilter.FILTER_REJECT;
-          }
+    const fallbackTerm =
+      termElement.getAttribute("data-glossary-word") ||
+      displayedTerm;
 
-          return NodeFilter.FILTER_ACCEPT;
-        }
-      }
-    );
+    const fallbackMeaning =
+      termElement.getAttribute("data-tooltip") ||
+      termElement.getAttribute("title") ||
+      "";
 
-    const textNodes = [];
+    const entry = entryFromGlossary || {
+      id: glossaryId,
+      term: fallbackTerm,
+      meaning: fallbackMeaning
+    };
 
-    while (walker.nextNode()) {
-      textNodes.push(walker.currentNode);
+    if (!entry.id || !entry.term || !entry.meaning || !displayedTerm.trim()) {
+      termElement.replaceWith(document.createTextNode(displayedTerm));
+      return;
     }
 
-    textNodes.forEach((textNode) => {
-      replaceWordsInTextNode(textNode, glossaryMap, usedTermsInThisQuote);
-    });
-  }
-
-  function replaceWordsInTextNode(textNode, glossaryMap, usedTermsInThisQuote) {
-    const text = textNode.nodeValue;
-    const wordRegex = /[א-ת\u0591-\u05C7]+/g;
-
-    let match;
-    let lastIndex = 0;
-    let changed = false;
-
-    const fragment = document.createDocumentFragment();
-
-    while ((match = wordRegex.exec(text)) !== null) {
-      const word = match[0];
-      const start = match.index;
-      const end = start + word.length;
-
-      if (start > lastIndex) {
-        fragment.appendChild(document.createTextNode(text.slice(lastIndex, start)));
-      }
-
-      const normalizedWord = normalizeHebrew(word);
-      const entry = glossaryMap.get(normalizedWord);
-
-      if (entry && !usedTermsInThisQuote.has(normalizedWord)) {
-        fragment.appendChild(createTooltip(entry, word));
-        usedTermsInThisQuote.add(normalizedWord);
-        changed = true;
-      } else {
-        fragment.appendChild(document.createTextNode(word));
-      }
-
-      lastIndex = end;
-    }
-
-    if (!changed) return;
-
-    if (lastIndex < text.length) {
-      fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
-    }
-
-    textNode.parentNode.replaceChild(fragment, textNode);
+    const tooltip = createTooltip(entry, displayedTerm);
+    termElement.replaceWith(tooltip);
   }
 
   function createTooltip(entry, displayedTerm) {
@@ -182,6 +130,7 @@
     button.className = CLASS_TERM;
     button.textContent = displayedTerm;
     button.setAttribute("aria-expanded", "false");
+    button.setAttribute("data-glossary-id", entry.id);
 
     const popover = document.createElement("span");
     popover.className = CLASS_POPOVER;
@@ -203,29 +152,6 @@
     popover.appendChild(closeButton);
     popover.appendChild(title);
     popover.appendChild(meaning);
-
-    if (entry.structure && entry.structure !== "—") {
-      const structure = document.createElement("span");
-      structure.className = "gb-glossary-structure";
-
-      const label = document.createElement("span");
-      label.className = "gb-glossary-structure-label";
-      label.textContent = "מבנה:";
-
-      structure.appendChild(label);
-
-      entry.structure
-        .split(";")
-        .map((part) => part.trim())
-        .filter(Boolean)
-        .forEach((part) => {
-          const line = document.createElement("span");
-          line.textContent = part;
-          structure.appendChild(line);
-        });
-
-      popover.appendChild(structure);
-    }
 
     wrap.appendChild(button);
     wrap.appendChild(popover);
@@ -404,18 +330,6 @@
       .gb-glossary-meaning {
         margin-top: 0.25rem;
         font-weight: 700;
-      }
-
-      .gb-glossary-structure {
-        margin-top: 0.6rem;
-        padding-top: 0.55rem;
-        border-top: 1px solid rgba(201, 168, 106, 0.55);
-        font-size: 0.92em;
-      }
-
-      .gb-glossary-structure-label {
-        font-weight: 700;
-        margin-bottom: 0.2rem;
       }
     `;
 
