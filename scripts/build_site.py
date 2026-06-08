@@ -29,6 +29,8 @@ SITE_SUBTITLE = "לימוד תלמוד וגמרא מן המקור — צעד א�
 WHATSAPP_CHANNEL_URL = "https://whatsapp.com/channel/0029VbCtpPOB4hdMMUaLUb0h"
 GA_MEASUREMENT_ID = "G-BBYFSSTE1Z"
 
+GLOSSARY_PATH = ROOT / "he" / "מילון.md"
+
 NAV_ITEMS = [
     ("בית", f"{BASE_PATH}/he/"),
     ("שיעורים", f"{BASE_PATH}/he/lessons/"),
@@ -56,6 +58,13 @@ class Lesson:
     toc: list[tuple[str, str]]
 
 
+@dataclass
+class GlossaryEntry:
+    id: str
+    word: str
+    definition: str
+
+
 def clean_dist() -> None:
     if DIST.exists():
         shutil.rmtree(DIST)
@@ -78,6 +87,59 @@ def copy_static_site() -> None:
     # Copy the existing static shell first. Generated lesson pages overwrite it.
     for name in ["assets", "he", "en", "manifest.webmanifest"]:
         copy_if_exists(ROOT / name, DIST / name)
+
+
+def strip_markdown_bold(value: str) -> str:
+    value = value.strip()
+    if value.startswith("**") and value.endswith("**") and len(value) >= 4:
+        return value[2:-2].strip()
+    return value
+
+
+def load_glossary() -> dict[str, GlossaryEntry]:
+    """Load he/מילון.md.
+
+    Expected table format:
+    | ID | מילה | פירוש |
+    |---:|---|---|
+    | 8 | **דְּאִיכָּא** | שיש |
+
+    IDs are stable and must not be changed after being assigned.
+    """
+    glossary: dict[str, GlossaryEntry] = {}
+
+    if not GLOSSARY_PATH.exists():
+        print(f"Warning: glossary file not found: {GLOSSARY_PATH}")
+        return glossary
+
+    text = GLOSSARY_PATH.read_text(encoding="utf-8")
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line.startswith("|") or "---" in line:
+            continue
+
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if len(cells) < 3:
+            continue
+
+        if cells[0] == "ID":
+            continue
+
+        entry_id = cells[0].strip()
+        word = strip_markdown_bold(cells[1])
+        definition = cells[2].strip()
+
+        if not entry_id or not entry_id.isdigit() or not word or not definition:
+            continue
+
+        glossary[entry_id] = GlossaryEntry(
+            id=entry_id,
+            word=word,
+            definition=definition,
+        )
+
+    return glossary
 
 
 def parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
@@ -123,12 +185,49 @@ def slugify_heading(text: str, used: set[str]) -> str:
     return slug
 
 
-def inline_markdown(text: str) -> str:
+def render_glossary_marker(word: str, entry_id: str, glossary: dict[str, GlossaryEntry]) -> str:
+    entry = glossary.get(entry_id)
+
+    if not entry:
+        print(f"Warning: glossary ID {entry_id} was used for '{word}', but was not found.")
+        return html.escape(word, quote=False)
+
+    escaped_word = html.escape(word, quote=False)
+    escaped_id = html.escape(entry.id, quote=True)
+    escaped_entry_word = html.escape(entry.word, quote=True)
+    escaped_definition = html.escape(entry.definition, quote=True)
+    aria_label = html.escape(f"{entry.word}: {entry.definition}", quote=True)
+
+    return (
+        '<span class="glossary-term" '
+        f'data-glossary-id="{escaped_id}" '
+        f'data-glossary-word="{escaped_entry_word}" '
+        f'data-tooltip="{escaped_definition}" '
+        f'title="{escaped_definition}" '
+        'tabindex="0" '
+        f'aria-label="{aria_label}">'
+        f"{escaped_word}"
+        "</span>"
+    )
+
+
+def inline_markdown(text: str, glossary: dict[str, GlossaryEntry] | None = None) -> str:
+    glossary = glossary or {}
     placeholders: list[str] = []
 
     def stash(value: str) -> str:
         placeholders.append(value)
         return f"\u0000{len(placeholders)-1}\u0000"
+
+    # Glossary markers are explicit only:
+    # דְּאִיכָּא{8} -> span with tooltip.
+    # A word without {ID} is never linked automatically, even if it exists in the glossary.
+    glossary_pattern = re.compile(r"([^\s{}<>()[\],.;:!?״\"']+)\{(\d+)\}")
+
+    text = glossary_pattern.sub(
+        lambda m: stash(render_glossary_marker(m.group(1), m.group(2), glossary)),
+        text,
+    )
 
     text = html.escape(text, quote=False)
     text = re.sub(r"`([^`]+)`", lambda m: stash(f"<code>{m.group(1)}</code>"), text)
@@ -183,7 +282,7 @@ def split_blocks(markdown: str) -> list[str]:
     return blocks
 
 
-def render_daf_cards(meta: dict[str, str]) -> str:
+def render_daf_cards(meta: dict[str, str], glossary: dict[str, GlossaryEntry]) -> str:
     cards: list[str] = []
 
     for index in range(1, 5):
@@ -197,7 +296,7 @@ def render_daf_cards(meta: dict[str, str]) -> str:
         ).strip()
 
         escaped_url = html.escape(external_url, quote=True)
-        caption_html = inline_markdown(caption)
+        caption_html = inline_markdown(caption, glossary)
 
         cards.append(
             '<div class="daf-card daf-external-card">'
@@ -214,7 +313,11 @@ def render_daf_cards(meta: dict[str, str]) -> str:
     return "\n".join(cards)
 
 
-def render_markdown(body: str, meta: dict[str, str]) -> tuple[str, list[tuple[str, str]]]:
+def render_markdown(
+    body: str,
+    meta: dict[str, str],
+    glossary: dict[str, GlossaryEntry],
+) -> tuple[str, list[tuple[str, str]]]:
     blocks = split_blocks(body)
     used_ids: set[str] = {"lesson-top"}
     toc: list[tuple[str, str]] = []
@@ -237,11 +340,11 @@ def render_markdown(body: str, meta: dict[str, str]) -> tuple[str, list[tuple[st
             text = block[2:].strip()
             if re.fullmatch(r"שיעור\s+\d+", text):
                 if not kicker_seen:
-                    out.append(f'<p class="lesson-kicker">{inline_markdown(text)}</p>')
+                    out.append(f'<p class="lesson-kicker">{inline_markdown(text, glossary)}</p>')
                     kicker_seen = True
                 continue
             if not title_seen:
-                out.append(f'<h1 id="lesson-top">{inline_markdown(text)}</h1>')
+                out.append(f'<h1 id="lesson-top">{inline_markdown(text, glossary)}</h1>')
                 toc.append(("lesson-top", text))
                 title_seen = True
                 continue
@@ -253,11 +356,11 @@ def render_markdown(body: str, meta: dict[str, str]) -> tuple[str, list[tuple[st
             section_id = slugify_heading(text, used_ids)
             toc.append((section_id, text))
             out.append(f'<section class="lesson-section" id="{section_id}">')
-            out.append(f"<h2>{inline_markdown(text)}</h2>")
+            out.append(f"<h2>{inline_markdown(text, glossary)}</h2>")
             open_section = True
 
             if text == "פוגשים את הדף":
-                daf_cards = render_daf_cards(meta)
+                daf_cards = render_daf_cards(meta, glossary)
                 if daf_cards:
                     out.append(daf_cards)
 
@@ -268,7 +371,7 @@ def render_markdown(body: str, meta: dict[str, str]) -> tuple[str, list[tuple[st
             out.append('<blockquote class="source-quote">')
             for item in items:
                 if item:
-                    out.append(f"<p>{inline_markdown(item)}</p>")
+                    out.append(f"<p>{inline_markdown(item, glossary)}</p>")
             out.append("</blockquote>")
             continue
 
@@ -276,7 +379,7 @@ def render_markdown(body: str, meta: dict[str, str]) -> tuple[str, list[tuple[st
             out.append('<ul class="plain-list">')
             for line in block.splitlines():
                 item = re.sub(r"^[-*]\s+", "", line).strip()
-                out.append(f"<li>{inline_markdown(item)}</li>")
+                out.append(f"<li>{inline_markdown(item, glossary)}</li>")
             out.append("</ul>")
             continue
 
@@ -284,12 +387,12 @@ def render_markdown(body: str, meta: dict[str, str]) -> tuple[str, list[tuple[st
             out.append('<ol class="plain-list">')
             for line in block.splitlines():
                 item = re.sub(r"^\d+\.\s+", "", line).strip()
-                out.append(f"<li>{inline_markdown(item)}</li>")
+                out.append(f"<li>{inline_markdown(item, glossary)}</li>")
             out.append("</ol>")
             continue
 
         paragraph = " ".join(block.splitlines())
-        out.append(f"<p>{inline_markdown(paragraph)}</p>")
+        out.append(f"<p>{inline_markdown(paragraph, glossary)}</p>")
 
     close_section()
     return "\n".join(out), toc
@@ -467,24 +570,24 @@ def render_lessons_index(lessons: list[Lesson]) -> str:
 {site_footer()}'''
 
 
-def load_lessons(source_dir: Path) -> list[Lesson]:
+def load_lessons(source_dir: Path, glossary: dict[str, GlossaryEntry]) -> list[Lesson]:
     lessons: list[Lesson] = []
     for path in sorted(source_dir.glob("*.md")):
         if path.name.upper() == "README.MD":
             continue
         text = path.read_text(encoding="utf-8")
         meta, body = parse_frontmatter(text)
-        html_body, toc = render_markdown(body, meta)
+        html_body, toc = render_markdown(body, meta, glossary)
         lessons.append(Lesson(meta=meta, body=body, html_body=html_body, toc=toc))
     return lessons
 
 
-def build_hebrew_lessons() -> None:
+def build_hebrew_lessons(glossary: dict[str, GlossaryEntry]) -> None:
     source_dir = ROOT / "content" / "lessons"
     if not source_dir.exists():
         return
 
-    lessons = sorted(load_lessons(source_dir), key=lambda l: l.meta.get("lesson_number", ""))
+    lessons = sorted(load_lessons(source_dir, glossary), key=lambda l: l.meta.get("lesson_number", ""))
     lessons_out = DIST / "he" / "lessons"
     lessons_out.mkdir(parents=True, exist_ok=True)
 
@@ -518,7 +621,8 @@ def main() -> None:
     generate_og_images_if_available()
     clean_dist()
     copy_static_site()
-    build_hebrew_lessons()
+    glossary = load_glossary()
+    build_hebrew_lessons(glossary)
     print(f"Built site into {DIST}")
 
 
