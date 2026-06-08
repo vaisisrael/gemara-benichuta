@@ -475,6 +475,7 @@ def site_footer() -> str:
 </footer>
 <script src="{BASE_PATH}/assets/js/site.js"></script>
 <script src="{BASE_PATH}/assets/js/gemara-glossary-tooltips.js" defer></script>
+<script src="{BASE_PATH}/assets/js/shabbat-lock.js"></script>
 </body>
 </html>'''
 
