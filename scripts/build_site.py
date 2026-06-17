@@ -23,7 +23,26 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
-BASE_PATH = "/gemara-benichuta"
+LEGACY_BASE_PATH = "/gemara-benichuta"
+
+
+def normalize_base_path(value: str) -> str:
+    """Normalize the Pages base path supplied by GitHub Actions.
+
+    Default GitHub project URL: /gemara-benichuta
+    Custom domain: empty string
+    """
+    value = value.strip()
+    if not value or value == "/":
+        return ""
+    if not value.startswith("/"):
+        value = "/" + value
+    return value.rstrip("/")
+
+
+BASE_PATH = normalize_base_path(
+    os.environ.get("SITE_BASE_PATH", LEGACY_BASE_PATH)
+)
 SITE_NAME = "גמרא למתחילים בניחותא"
 SITE_SUBTITLE = "לימוד תלמוד וגמרא מן המקור — צעד אחר צעד"
 WHATSAPP_CHANNEL_URL = "https://whatsapp.com/channel/0029VbCtpPOB4hdMMUaLUb0h"
@@ -85,9 +104,41 @@ def copy_if_exists(src: Path, dst: Path) -> None:
 
 def copy_static_site() -> None:
     # Copy the existing static shell first. Generated lesson pages overwrite it.
-    for name in ["assets", "he", "en", "manifest.webmanifest"]:
+    for name in ["index.html", "assets", "he", "en", "manifest.webmanifest"]:
         copy_if_exists(ROOT / name, DIST / name)
 
+
+
+def rewrite_static_base_paths() -> None:
+    """Adapt copied static files to the active GitHub Pages base path.
+
+    Some hand-written files still contain the former project path
+    /gemara-benichuta. On the custom domain, GitHub serves the site from /,
+    so those references must become root-relative. When the site is served
+    from the original GitHub project URL, this is intentionally a no-op.
+    """
+    text_suffixes = {
+        ".html",
+        ".css",
+        ".js",
+        ".json",
+        ".webmanifest",
+        ".xml",
+        ".txt",
+    }
+
+    for path in DIST.rglob("*"):
+        if not path.is_file() or path.suffix.lower() not in text_suffixes:
+            continue
+
+        try:
+            original = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+
+        updated = original.replace(LEGACY_BASE_PATH, BASE_PATH)
+        if updated != original:
+            path.write_text(updated, encoding="utf-8")
 
 def strip_markdown_bold(value: str) -> str:
     value = value.strip()
@@ -744,7 +795,8 @@ def main() -> None:
     copy_static_site()
     glossary = load_glossary()
     build_hebrew_lessons(glossary)
-    print(f"Built site into {DIST}")
+    rewrite_static_base_paths()
+    print(f"Built site into {DIST} with BASE_PATH={BASE_PATH!r}")
 
 
 if __name__ == "__main__":
