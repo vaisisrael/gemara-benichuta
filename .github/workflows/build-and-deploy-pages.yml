@@ -21,6 +21,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -33,10 +37,9 @@ jobs:
           sudo apt-get install -y fonts-noto-core
 
       - name: Build static site from Markdown
+        env:
+          SITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: python scripts/build_site.py
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
