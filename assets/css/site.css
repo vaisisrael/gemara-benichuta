@@ -218,6 +218,136 @@ a:hover{text-decoration:underline}
   box-shadow:0 4px 14px rgba(31,41,51,.08);
 }
 
+/* סימון השלמת שיעור */
+.lesson-completion{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:10px;
+  margin-top:42px;
+  padding:22px;
+  background:var(--source);
+  border:1px solid rgba(201,168,106,.65);
+  border-radius:20px;
+}
+
+.lesson-completion strong{
+  color:var(--brand-dark);
+  font-size:21px;
+  line-height:1.45;
+}
+
+.lesson-complete-button{
+  margin-top:4px;
+  border:0;
+  background:var(--brand-dark);
+  color:#fff;
+  cursor:pointer;
+  font:inherit;
+}
+
+.lesson-complete-button:hover{
+  text-decoration:none;
+  background:var(--brand);
+}
+
+.lesson-complete-button:focus-visible{
+  outline:3px solid rgba(201,168,106,.65);
+  outline-offset:3px;
+}
+
+.lesson-completion.is-complete .lesson-complete-button{
+  background:var(--box);
+  color:var(--brand-dark);
+  cursor:default;
+}
+
+.lesson-completion-status{
+  min-height:1.5em;
+  margin:0;
+  color:var(--brand-dark);
+  font-size:17px;
+  font-weight:700;
+  line-height:1.5;
+}
+
+.lesson-completion-note{
+  margin:0;
+  color:var(--muted);
+  font-size:15px;
+  line-height:1.55;
+}
+
+/* חלון שינוי נקודת ההמשך */
+.lesson-progress-dialog{
+  width:min(520px,calc(100% - 28px));
+  padding:0;
+  border:0;
+  border-radius:22px;
+  background:var(--white);
+  color:var(--text);
+  box-shadow:0 24px 80px rgba(31,41,51,.28);
+}
+
+.lesson-progress-dialog::backdrop{
+  background:rgba(31,41,51,.46);
+}
+
+.lesson-progress-dialog form{
+  padding:26px;
+}
+
+.lesson-progress-dialog h2{
+  margin:0 0 14px;
+  padding:0;
+  border:0;
+  color:var(--brand-dark);
+  font-family:"Frank Ruhl Libre",serif;
+  font-size:28px;
+  line-height:1.3;
+}
+
+.lesson-progress-dialog p{
+  margin:0 0 22px;
+  line-height:1.7;
+}
+
+.lesson-progress-dialog-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.lesson-progress-dialog button{
+  border:0;
+  cursor:pointer;
+  font:inherit;
+}
+
+/* כפתור ההמשך בדף רשימת השיעורים */
+.series-progress{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:8px;
+  margin:28px 0 34px;
+  padding:20px;
+  background:var(--source);
+  border:1px solid rgba(201,168,106,.55);
+  border-radius:20px;
+}
+
+.series-progress-button{
+  min-width:min(100%,280px);
+}
+
+.series-progress-note{
+  margin:0;
+  color:var(--muted);
+  font-size:15px;
+  line-height:1.5;
+}
+
 @media (max-width:850px){
   body{font-size:19px;line-height:1.82}
 
@@ -267,6 +397,31 @@ a:hover{text-decoration:underline}
   .lesson-signup{
     margin-top:36px;
     padding:18px;
+  }
+
+  .lesson-completion{
+    margin-top:36px;
+    padding:18px;
+  }
+
+  .lesson-complete-button{
+    width:100%;
+  }
+
+  .lesson-progress-dialog-actions{
+    flex-direction:column;
+  }
+
+  .lesson-progress-dialog-actions .button{
+    width:100%;
+  }
+
+  .series-progress{
+    padding:18px;
+  }
+
+  .series-progress-button{
+    width:100%;
   }
 
   .daf-card{
