@@ -568,6 +568,58 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function applyProgressToLink(progressLink, progressNote, lessonNumbers) {
+    if (!progressLink || !lessonNumbers.length) {
+      return;
+    }
+
+    const firstLesson = lessonNumbers[0];
+    const lastLesson = lessonNumbers[lessonNumbers.length - 1];
+    const lastCompleted = getLastCompletedLesson();
+
+    if (lastCompleted === null) {
+      progressLink.textContent = 'התחילו מהשיעור הראשון';
+      progressLink.href =
+        `${BASE_PATH}/he/lessons/${formatLessonNumber(firstLesson)}.html`;
+
+      if (progressNote) {
+        progressNote.textContent =
+          'לאחר סימון שיעור כהושלם, נציג כאן את נקודת ההמשך.';
+      }
+
+      return;
+    }
+
+    const nextLesson = lessonNumbers.find(
+      (number) => number > lastCompleted
+    );
+
+    if (nextLesson !== undefined) {
+      progressLink.textContent =
+        `המשיכו לשיעור ${formatLessonNumber(nextLesson)}`;
+
+      progressLink.href =
+        `${BASE_PATH}/he/lessons/${formatLessonNumber(nextLesson)}.html`;
+
+      if (progressNote) {
+        progressNote.textContent =
+          `השיעור האחרון שסומן כהושלם הוא שיעור `
+          + `${formatLessonNumber(lastCompleted)}.`;
+      }
+
+      return;
+    }
+
+    progressLink.textContent = 'אל השיעור האחרון';
+    progressLink.href =
+      `${BASE_PATH}/he/lessons/${formatLessonNumber(lastLesson)}.html`;
+
+    if (progressNote) {
+      progressNote.textContent =
+        'סיימתם את כל השיעורים שפורסמו עד כה.';
+    }
+  }
+
   /*
    * הכפתור בראש דף רשימת השיעורים.
    */
@@ -592,49 +644,61 @@ document.addEventListener('DOMContentLoaded', () => {
       .filter((value) => value !== null)
       .sort((a, b) => a - b);
 
-    if (progressLink && lessonNumbers.length) {
-      const firstLesson = lessonNumbers[0];
-      const lastLesson = lessonNumbers[lessonNumbers.length - 1];
-      const lastCompleted = getLastCompletedLesson();
+    applyProgressToLink(
+      progressLink,
+      progressNote,
+      lessonNumbers
+    );
+  }
 
-      if (lastCompleted === null) {
-        progressLink.textContent = 'התחילו מהשיעור הראשון';
-        progressLink.href =
-          `${BASE_PATH}/he/lessons/${formatLessonNumber(firstLesson)}.html`;
+  /*
+   * הכפתור הראשי בדף הבית משתמש באותה נקודת המשך.
+   * מספרי השיעורים נקראים מדף רשימת השיעורים, כדי שהכפתור
+   * יתעדכן אוטומטית גם כאשר מתפרסם שיעור חדש.
+   */
+  const homeProgressLink = document.querySelector(
+    '[data-home-progress-link]'
+  );
 
-        if (progressNote) {
-          progressNote.textContent =
-            'לאחר סימון שיעור כהושלם, נציג כאן את נקודת ההמשך.';
+  if (homeProgressLink) {
+    fetch(`${BASE_PATH}/he/lessons/`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Lessons index could not be loaded.');
         }
-      } else {
-        const nextLesson = lessonNumbers.find(
-          (number) => number > lastCompleted
+
+        return response.text();
+      })
+      .then((pageHtml) => {
+        const parser = new DOMParser();
+        const page = parser.parseFromString(pageHtml, 'text/html');
+        const progressData = page.querySelector(
+          '[data-series-progress]'
         );
 
-        if (nextLesson !== undefined) {
-          progressLink.textContent =
-            `המשיכו לשיעור ${formatLessonNumber(nextLesson)}`;
-
-          progressLink.href =
-            `${BASE_PATH}/he/lessons/${formatLessonNumber(nextLesson)}.html`;
-
-          if (progressNote) {
-            progressNote.textContent =
-              `השיעור האחרון שסומן כהושלם הוא שיעור `
-              + `${formatLessonNumber(lastCompleted)}.`;
-          }
-        } else {
-          progressLink.textContent = 'אל השיעור האחרון';
-
-          progressLink.href =
-            `${BASE_PATH}/he/lessons/${formatLessonNumber(lastLesson)}.html`;
-
-          if (progressNote) {
-            progressNote.textContent =
-              'סיימתם את כל השיעורים שפורסמו עד כה.';
-          }
+        if (!progressData) {
+          return;
         }
-      }
-    }
+
+        const lessonNumbers = String(
+          progressData.dataset.lessonNumbers || ''
+        )
+          .split(',')
+          .map((value) => normalizeLessonNumber(value))
+          .filter((value) => value !== null)
+          .sort((a, b) => a - b);
+
+        applyProgressToLink(
+          homeProgressLink,
+          null,
+          lessonNumbers
+        );
+      })
+      .catch(() => {
+        /*
+         * במקרה של תקלה בטעינת הרשימה, הכפתור הקיים בדף הבית
+         * נשאר ללא שינוי וממשיך להפנות לשיעור הראשון.
+         */
+      });
   }
 });
