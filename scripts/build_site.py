@@ -511,6 +511,77 @@ def render_lesson_bottom_nav(next_lesson: Lesson | None) -> str:
 </nav>'''
 
 
+def lesson_completion_html(
+    lesson: Lesson,
+    next_lesson: Lesson | None,
+) -> str:
+    lesson_number = html.escape(
+        lesson.meta.get("lesson_number", ""),
+        quote=True,
+    )
+
+    next_number = ""
+    if next_lesson:
+        next_number = html.escape(
+            next_lesson.meta.get("lesson_number", ""),
+            quote=True,
+        )
+
+    return f'''<section
+  class="lesson-completion"
+  data-lesson-completion
+  data-lesson-number="{lesson_number}"
+  data-next-lesson-number="{next_number}"
+  aria-label="סימון השלמת השיעור"
+>
+  <strong>סיימתם ללמוד את השיעור?</strong>
+
+  <button
+    class="button lesson-complete-button"
+    type="button"
+    data-complete-lesson
+  >
+    סיימתי את השיעור
+  </button>
+
+  <p
+    class="lesson-completion-status"
+    data-completion-status
+    aria-live="polite"
+  ></p>
+
+  <p class="lesson-completion-note">
+    נקודת ההמשך נשמרת רק בדפדפן הזה.
+  </p>
+
+  <dialog class="lesson-progress-dialog" data-progress-dialog>
+    <form method="dialog">
+      <h2>שינוי נקודת ההמשך</h2>
+
+      <p data-progress-dialog-text></p>
+
+      <div class="lesson-progress-dialog-actions">
+        <button
+          class="button primary"
+          type="button"
+          data-progress-change
+        >
+          כן, לשנות את נקודת ההמשך
+        </button>
+
+        <button
+          class="button secondary"
+          type="button"
+          data-progress-keep
+        >
+          לא, להשאיר את נקודת ההמשך
+        </button>
+      </div>
+    </form>
+  </dialog>
+</section>'''
+
+
 def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str:
     meta = lesson.meta
     title = meta.get("title", "שיעור")
@@ -519,6 +590,7 @@ def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str
         f'<a href="#{section_id}">{html.escape(label)}</a>'
         for section_id, label in lesson.toc
     )
+    completion = lesson_completion_html(lesson, next_lesson)
     prev_next = render_lesson_bottom_nav(next_lesson)
     whatsapp_signup = whatsapp_signup_html()
     return f'''{html_head(f"שיעור {lesson_number} — {title}", meta)}
@@ -535,6 +607,7 @@ def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str
   </aside>
   <article class="lesson-article">
     {lesson.html_body}
+    {completion}
     {whatsapp_signup}
     {prev_next}
   </article>
@@ -543,13 +616,28 @@ def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str
 
 
 def render_lessons_index(lessons: list[Lesson]) -> str:
+    sorted_lessons = sorted(
+        lessons,
+        key=lambda lesson: lesson.meta.get("lesson_number", ""),
+    )
+
     rows = []
-    for lesson in sorted(lessons, key=lambda l: l.meta.get("lesson_number", "")):
+    lesson_numbers: list[str] = []
+
+    for lesson in sorted_lessons:
         meta = lesson.meta
-        number = html.escape(meta.get("lesson_number", ""))
+        raw_number = meta.get("lesson_number", "").strip()
+
+        if not raw_number:
+            continue
+
+        lesson_numbers.append(raw_number)
+
+        number = html.escape(raw_number)
         title = html.escape(meta.get("title", ""))
-        slug = html.escape(meta.get("lesson_number", ""), quote=True)
+        slug = html.escape(raw_number, quote=True)
         desc = html.escape(meta.get("core_point") or meta.get("seo_description") or "")
+
         rows.append(
             f'''<a class="lesson-row" href="{BASE_PATH}/he/lessons/{slug}.html">
   <span class="lesson-number">{number}</span>
@@ -557,13 +645,45 @@ def render_lessons_index(lessons: list[Lesson]) -> str:
   <span class="lesson-desc">{desc}</span>
 </a>'''
         )
+
     rows_html = "\n".join(rows)
+
+    numbers_attribute = html.escape(
+        ",".join(lesson_numbers),
+        quote=True,
+    )
+
+    if lesson_numbers:
+        first_number = html.escape(lesson_numbers[0], quote=True)
+        first_href = f"{BASE_PATH}/he/lessons/{first_number}.html"
+
+        progress_html = f'''<div
+  class="series-progress"
+  data-series-progress
+  data-lesson-numbers="{numbers_attribute}"
+>
+  <a
+    class="button primary series-progress-button"
+    href="{first_href}"
+    data-series-progress-link
+  >
+    התחילו מהשיעור הראשון
+  </a>
+
+  <p class="series-progress-note" data-series-progress-note>
+    נקודת ההמשך נשמרת רק בדפדפן הזה.
+  </p>
+</div>'''
+    else:
+        progress_html = ""
+
     return f'''{html_head("כל שיעורי הסדרה")}
 <body>
 {site_header("שיעורים")}
 <main class="page narrow-page">
   <h1>כל שיעורי הסדרה</h1>
   <p class="lead small">השיעורים מוצגים לפי סדר לימודי. מומלץ להתחיל מן השיעור הראשון.</p>
+  {progress_html}
   <div class="lesson-list">
     {rows_html}
   </div>
