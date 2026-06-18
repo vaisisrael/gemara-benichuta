@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const BASE_PATH = '/gemara-benichuta';
+  const FEEDBACK_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwoTpKos0enk2kMDD6omIIxJ2TadzOsfx6vwJZzk_WNdInNVH2Of28Zf0dubslVw3jZ/exec';
 
   const btn = document.querySelector('.menu-toggle');
   const nav = document.querySelector('#main-nav');
@@ -632,4 +633,157 @@ document.addEventListener('DOMContentLoaded', () => {
          */
       });
   }
+
+
+  /*
+   * משוב שיעור
+   *
+   * נשמר בגיליון Google Sheets דרך Apps Script.
+   * בדפדפן נשמר רק מזהה משוב מקומי לכל שיעור, כדי לאפשר עדכון של אותה שורה.
+   */
+  const FEEDBACK_STORAGE_PREFIX = 'gemara-benichuta:feedback:v1:';
+
+  function feedbackStorageKey(lessonNumber) {
+    return `${FEEDBACK_STORAGE_PREFIX}${formatLessonNumber(lessonNumber)}`;
+  }
+
+  function generateFeedbackId(lessonNumber) {
+    const lesson = formatLessonNumber(lessonNumber) || 'lesson';
+
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return `${lesson}-${window.crypto.randomUUID()}`;
+    }
+
+    return `${lesson}-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  }
+
+  function loadSavedFeedback(lessonNumber) {
+    try {
+      const raw = window.localStorage.getItem(feedbackStorageKey(lessonNumber));
+      return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function saveFeedbackLocally(lessonNumber, feedback) {
+    try {
+      window.localStorage.setItem(
+        feedbackStorageKey(lessonNumber),
+        JSON.stringify(feedback)
+      );
+    } catch (error) {
+      // המשוב כבר נשלח; שמירה מקומית היא רק לצורך עדכון עתידי מאותו דפדפן.
+    }
+  }
+
+  document.querySelectorAll('[data-lesson-feedback]').forEach((feedbackSection) => {
+    const lessonNumber = normalizeLessonNumber(feedbackSection.dataset.lessonNumber);
+    const form = feedbackSection.querySelector('[data-feedback-form]');
+    const status = feedbackSection.querySelector('[data-feedback-status]');
+    const submitButton = feedbackSection.querySelector('.lesson-feedback-submit');
+    const commentField = feedbackSection.querySelector('textarea[name="comment"]');
+
+    if (!form || lessonNumber === null) {
+      return;
+    }
+
+    const savedFeedback = loadSavedFeedback(lessonNumber);
+
+    if (savedFeedback) {
+      if (savedFeedback.clarityRating) {
+        const ratingInputs = Array.from(
+          form.querySelectorAll('input[name="clarity_rating"]')
+        );
+        const savedRating = ratingInputs.find(
+          (input) => input.value === savedFeedback.clarityRating
+        );
+
+        if (savedRating) {
+          savedRating.checked = true;
+        }
+      }
+
+      if (commentField && savedFeedback.comment) {
+        commentField.value = savedFeedback.comment;
+      }
+
+      if (submitButton) {
+        submitButton.textContent = 'עדכון משוב';
+      }
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const checkedRating = form.querySelector('input[name="clarity_rating"]:checked');
+      const clarityRating = checkedRating ? checkedRating.value : '';
+      const comment = commentField ? commentField.value.trim() : '';
+
+      if (!clarityRating && !comment) {
+        if (status) {
+          status.textContent = 'בחרו דירוג או כתבו הערה לפני השליחה.';
+        }
+        return;
+      }
+
+      const currentSavedFeedback = loadSavedFeedback(lessonNumber);
+      const feedbackId = currentSavedFeedback && currentSavedFeedback.feedbackId
+        ? currentSavedFeedback.feedbackId
+        : generateFeedbackId(lessonNumber);
+
+      const payload = {
+        feedback_id: feedbackId,
+        lesson_number: formatLessonNumber(lessonNumber),
+        clarity_rating: clarityRating,
+        comment,
+      };
+
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = currentSavedFeedback ? 'מעדכן...' : 'שולח...';
+      }
+
+      if (status) {
+        status.textContent = '';
+      }
+
+      try {
+        await fetch(FEEDBACK_ENDPOINT, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        saveFeedbackLocally(lessonNumber, {
+          feedbackId,
+          clarityRating,
+          comment,
+        });
+
+        if (status) {
+          status.textContent = 'תודה, המשוב התקבל.';
+        }
+
+        if (submitButton) {
+          submitButton.textContent = 'עדכון משוב';
+        }
+      } catch (error) {
+        if (status) {
+          status.textContent = 'לא היה אפשר לשלוח את המשוב כרגע. נסו שוב מאוחר יותר.';
+        }
+
+        if (submitButton) {
+          submitButton.textContent = currentSavedFeedback ? 'עדכון משוב' : 'שליחת משוב';
+        }
+      } finally {
+        if (submitButton) {
+          submitButton.disabled = false;
+        }
+      }
+    });
+  });
 });
