@@ -326,10 +326,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /*
-   * התקדמות בלימוד
+   * סימנייה להמשך
    *
-   * נשמרת רק נקודת ההמשך שהמשתמש בחר במפורש
-   * באמצעות הכפתור "סיימתי את השיעור".
+   * משתמשים באותו מפתח localStorage שהיה קיים קודם,
+   * כדי לתמוך באופן טבעי בגולשים שכבר נשמרה אצלם נקודת המשך.
+   * מעתה הערך נשמר רק בלחיצה מפורשת על "לשמור סימנייה".
    */
   const LESSON_PROGRESS_KEY = 'gemara-benichuta:last-completed:v1';
 
@@ -377,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function setCompletionButtonState(container, completed) {
+  function setCompletionButtonState(container, bookmarked) {
     const button = container.querySelector('[data-complete-lesson]');
     const status = container.querySelector('[data-completion-status]');
 
@@ -385,14 +386,14 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    container.classList.toggle('is-complete', completed);
-    button.disabled = completed;
+    container.classList.toggle('is-complete', bookmarked);
+    button.disabled = bookmarked;
 
-    if (completed) {
-      button.textContent = '✓ השיעור סומן כהושלם';
+    if (bookmarked) {
+      button.textContent = '🔖 הסימנייה שמורה כאן';
       status.textContent = '';
     } else {
-      button.textContent = 'סיימתי את השיעור';
+      button.textContent = '🔖 לשמור סימנייה';
       status.textContent = '';
     }
   }
@@ -403,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!saved) {
       if (status) {
-        status.textContent = 'לא היה אפשר לשמור את נקודת ההמשך בדפדפן.';
+        status.textContent = 'לא היה אפשר לשמור את הסימנייה בדפדפן.';
       }
 
       return;
@@ -412,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setCompletionButtonState(container, true);
 
     if (status) {
-      status.textContent = 'נקודת ההמשך נשמרה.';
+      status.textContent = 'הסימנייה נשמרה.';
     }
   }
 
@@ -425,198 +426,127 @@ document.addEventListener('DOMContentLoaded', () => {
       completionContainer.dataset.lessonNumber
     );
 
-    const nextLesson = normalizeLessonNumber(
-      completionContainer.dataset.nextLessonNumber
-    );
-
     const completeButton = completionContainer.querySelector(
       '[data-complete-lesson]'
-    );
-
-    const dialog = completionContainer.querySelector(
-      '[data-progress-dialog]'
-    );
-
-    const dialogText = completionContainer.querySelector(
-      '[data-progress-dialog-text]'
-    );
-
-    const changeProgressButton = completionContainer.querySelector(
-      '[data-progress-change]'
-    );
-
-    const keepProgressButton = completionContainer.querySelector(
-      '[data-progress-keep]'
     );
 
     const savedLesson = getLastCompletedLesson();
 
     /*
-     * רק השיעור שהוא נקודת ההתקדמות הנוכחית מוצג כמסומן.
-     * כניסה לשיעור ישן אינה משנה דבר.
+     * רק השיעור שבו שמורה הסימנייה מוצג כמסומן.
+     * כניסה לשיעור אחר אינה משנה דבר.
      */
-    if (
-      currentLesson !== null
-      && savedLesson !== null
-      && currentLesson === savedLesson
-    ) {
-      setCompletionButtonState(completionContainer, true);
+    if (currentLesson !== null) {
+      setCompletionButtonState(
+        completionContainer,
+        savedLesson !== null && currentLesson === savedLesson
+      );
     }
 
     if (completeButton && currentLesson !== null) {
       completeButton.addEventListener('click', () => {
-        const lastCompleted = getLastCompletedLesson();
-
         /*
-         * אין עדיין נקודת המשך, או שהמשתמש מתקדם קדימה:
-         * שומרים מיד.
+         * לחיצה מפורשת על הכפתור שומרת תמיד את השיעור הנוכחי כסימנייה.
+         * אין שאלה ואין בדיקה אם מדובר בשיעור מוקדם יותר.
          */
-        if (
-          lastCompleted === null
-          || currentLesson >= lastCompleted
-        ) {
-          markLessonAsCompleted(
-            completionContainer,
-            currentLesson
-          );
-
-          return;
-        }
-
-        /*
-         * המשתמש סימן שיעור מוקדם יותר מן השיעור
-         * שכבר נשמר. אין מחזירים אותו לאחור בלי אישור.
-         */
-        const savedDisplay = formatLessonNumber(lastCompleted);
-        const nextDisplay = nextLesson !== null
-          ? formatLessonNumber(nextLesson)
-          : formatLessonNumber(currentLesson);
-
-        if (dialogText) {
-          if (nextLesson !== null) {
-            dialogText.textContent =
-              `נקודת ההמשך הנוכחית היא אחרי שיעור ${savedDisplay}. `
-              + `האם לשנות אותה כך שבפעם הבאה תמשיכו לשיעור ${nextDisplay}?`;
-          } else {
-            dialogText.textContent =
-              `נקודת ההמשך הנוכחית היא אחרי שיעור ${savedDisplay}. `
-              + `האם לשנות אותה לשיעור ${formatLessonNumber(currentLesson)}?`;
-          }
-        }
-
-        if (dialog && typeof dialog.showModal === 'function') {
-          dialog.showModal();
-          return;
-        }
-
-        /*
-         * גיבוי לדפדפן ישן שאינו תומך ב-dialog.
-         */
-        const shouldChange = window.confirm(
-          dialogText
-            ? dialogText.textContent
-            : 'האם לשנות את נקודת ההמשך?'
-        );
-
-        if (shouldChange) {
-          markLessonAsCompleted(
-            completionContainer,
-            currentLesson
-          );
-        } else {
-          setCompletionButtonState(
-            completionContainer,
-            false
-          );
-        }
-      });
-    }
-
-    if (changeProgressButton && dialog) {
-      changeProgressButton.addEventListener('click', () => {
         markLessonAsCompleted(
           completionContainer,
           currentLesson
-        );
-
-        dialog.close();
-      });
-    }
-
-    if (keepProgressButton && dialog) {
-      keepProgressButton.addEventListener('click', () => {
-        /*
-         * המשתמש בחר לא לשנות את נקודת ההמשך.
-         * הסימון החדש של השיעור הישן מתבטל.
-         */
-        setCompletionButtonState(
-          completionContainer,
-          false
-        );
-
-        dialog.close();
-      });
-    }
-
-    if (dialog) {
-      dialog.addEventListener('cancel', () => {
-        setCompletionButtonState(
-          completionContainer,
-          false
         );
       });
     }
   }
 
-  function applyProgressToLink(progressLink, progressNote, lessonNumbers) {
+  function applyProgressToLink(progressLink, progressNote, lessonNumbers, options = {}) {
     if (!progressLink || !lessonNumbers.length) {
       return;
     }
 
-    const firstLesson = lessonNumbers[0];
-    const lastLesson = lessonNumbers[lessonNumbers.length - 1];
-    const lastCompleted = getLastCompletedLesson();
+    const {
+      hideWhenNoBookmark = false,
+    } = options;
 
-    if (lastCompleted === null) {
+    const firstLesson = lessonNumbers[0];
+    const savedLesson = getLastCompletedLesson();
+
+    if (savedLesson === null) {
+      if (hideWhenNoBookmark) {
+        const progressBox = progressLink.closest('[data-series-progress]');
+
+        if (progressBox) {
+          progressBox.hidden = true;
+        } else {
+          progressLink.hidden = true;
+        }
+
+        if (progressNote) {
+          progressNote.textContent = '';
+        }
+
+        return;
+      }
+
       progressLink.textContent = 'התחילו מהשיעור הראשון';
       progressLink.href =
         `${BASE_PATH}/he/lessons/${formatLessonNumber(firstLesson)}.html`;
 
       if (progressNote) {
-        progressNote.textContent =
-          'לאחר סימון שיעור כהושלם, נציג כאן את נקודת ההמשך.';
+        progressNote.textContent = '';
       }
 
       return;
     }
 
-    const nextLesson = lessonNumbers.find(
-      (number) => number > lastCompleted
+    const bookmarkedLesson = lessonNumbers.find(
+      (number) => number === savedLesson
     );
 
-    if (nextLesson !== undefined) {
-      progressLink.textContent =
-        `המשיכו לשיעור ${formatLessonNumber(nextLesson)}`;
+    if (bookmarkedLesson !== undefined) {
+      const progressBox = progressLink.closest('[data-series-progress]');
 
+      if (progressBox) {
+        progressBox.hidden = false;
+      }
+
+      progressLink.hidden = false;
+      progressLink.textContent = '🔖 מעבר לסימנייה שלי';
       progressLink.href =
-        `${BASE_PATH}/he/lessons/${formatLessonNumber(nextLesson)}.html`;
+        `${BASE_PATH}/he/lessons/${formatLessonNumber(bookmarkedLesson)}.html`;
 
       if (progressNote) {
         progressNote.textContent =
-          `השיעור האחרון שסומן כהושלם הוא שיעור `
-          + `${formatLessonNumber(lastCompleted)}.`;
+          `הסימנייה שמורה בשיעור ${formatLessonNumber(bookmarkedLesson)}.`;
       }
 
       return;
     }
 
-    progressLink.textContent = 'אל השיעור האחרון';
+    /*
+     * אם נשמרה בעבר סימנייה לשיעור שכבר אינו קיים ברשימה,
+     * מתייחסים לכך כאילו אין סימנייה זמינה.
+     */
+    if (hideWhenNoBookmark) {
+      const progressBox = progressLink.closest('[data-series-progress]');
+
+      if (progressBox) {
+        progressBox.hidden = true;
+      } else {
+        progressLink.hidden = true;
+      }
+
+      if (progressNote) {
+        progressNote.textContent = '';
+      }
+
+      return;
+    }
+
+    progressLink.textContent = 'התחילו מהשיעור הראשון';
     progressLink.href =
-      `${BASE_PATH}/he/lessons/${formatLessonNumber(lastLesson)}.html`;
+      `${BASE_PATH}/he/lessons/${formatLessonNumber(firstLesson)}.html`;
 
     if (progressNote) {
-      progressNote.textContent =
-        'סיימתם את כל השיעורים שפורסמו עד כה.';
+      progressNote.textContent = '';
     }
   }
 
@@ -647,7 +577,8 @@ document.addEventListener('DOMContentLoaded', () => {
     applyProgressToLink(
       progressLink,
       progressNote,
-      lessonNumbers
+      lessonNumbers,
+      { hideWhenNoBookmark: true }
     );
   }
 
