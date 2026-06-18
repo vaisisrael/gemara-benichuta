@@ -561,15 +561,14 @@ a:hover{text-decoration:underline}
     pointer-events:auto;
     display:flex;
     align-items:center;
-    gap:8px;
-    min-height:36px;
-    padding:6px 11px;
+    gap:9px;
+    min-height:44px;
+    padding:10px 14px;
     border:1px solid rgba(63,95,74,.20);
     border-radius:999px;
     background:rgba(255,253,248,.98);
-    box-shadow:0 6px 18px rgba(31,41,51,.14);
+    box-shadow:0 10px 32px rgba(31,41,51,.20);
     color:var(--brand-dark);
-    font-size:15px;
     font-weight:700;
     list-style:none;
   }
@@ -578,7 +577,7 @@ a:hover{text-decoration:underline}
 
   .lesson-toc details:not([open]) summary::after{
     content:"☰";
-    font-size:15px;
+    font-size:17px;
     line-height:1;
     color:var(--brand);
   }
