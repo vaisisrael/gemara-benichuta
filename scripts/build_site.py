@@ -391,7 +391,19 @@ def render_markdown(
             text = block[2:].strip()
             if re.fullmatch(r"שיעור\s+\d+", text):
                 if not kicker_seen:
-                    out.append(f'<p class="lesson-kicker">{inline_markdown(text, glossary)}</p>')
+                    lesson_number = html.escape(meta.get("lesson_number", ""), quote=True)
+                    out.append(
+                        '<div class="lesson-kicker" '
+                        'data-lesson-completion '
+                        f'data-lesson-number="{lesson_number}" '
+                        'aria-label="שמירת סימנייה לשיעור">'
+                        f'<span>{inline_markdown(text, glossary)}</span>'
+                        '<button class="lesson-bookmark-button" type="button" data-complete-lesson>'
+                        '🔖 לשמור סימנייה'
+                        '</button>'
+                        '<span class="lesson-bookmark-status" data-completion-status aria-live="polite"></span>'
+                        '</div>'
+                    )
                     kicker_seen = True
                 continue
             if not title_seen:
@@ -641,7 +653,6 @@ def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str
         f'<a href="#{section_id}">{html.escape(label)}</a>'
         for section_id, label in lesson.toc
     )
-    completion = lesson_completion_html(lesson, next_lesson)
     prev_next = render_lesson_bottom_nav(next_lesson)
     whatsapp_signup = whatsapp_signup_html()
     return f'''{html_head(f"שיעור {lesson_number} — {title}", meta)}
@@ -658,7 +669,6 @@ def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str
   </aside>
   <article class="lesson-article">
     {lesson.html_body}
-    {completion}
     {whatsapp_signup}
     {prev_next}
   </article>
@@ -712,6 +722,7 @@ def render_lessons_index(lessons: list[Lesson]) -> str:
   class="series-progress"
   data-series-progress
   data-lesson-numbers="{numbers_attribute}"
+  hidden
 >
   <a
     class="button primary series-progress-button"
