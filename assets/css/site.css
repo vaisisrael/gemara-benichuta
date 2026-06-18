@@ -70,7 +70,62 @@ a:hover{text-decoration:underline}
 .lesson-toc a.is-active{color:var(--brand-dark);font-weight:700;background:rgba(201,168,106,.20);padding-inline:8px;text-decoration:none}
 
 .lesson-article{min-width:0;background:var(--white);padding:clamp(24px,5vw,54px);border-radius:28px;box-shadow:0 14px 50px rgba(31,41,51,.08)}
-.lesson-kicker{font-weight:700;color:var(--brand);margin:0}
+.lesson-kicker{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  color:var(--brand);
+  font-weight:700;
+  margin:0 0 8px;
+}
+
+.lesson-kicker > span:first-child{
+  flex:1 1 auto;
+}
+
+.lesson-bookmark-button{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(63,95,74,.25);
+  border-radius:999px;
+  background:transparent;
+  color:var(--brand-dark);
+  padding:6px 12px;
+  cursor:pointer;
+  font:inherit;
+  font-size:15px;
+  font-weight:700;
+  line-height:1.35;
+  white-space:nowrap;
+}
+
+.lesson-bookmark-button:hover{
+  background:var(--box);
+}
+
+.lesson-bookmark-button:focus-visible{
+  outline:3px solid rgba(201,168,106,.65);
+  outline-offset:3px;
+}
+
+.lesson-kicker.is-complete .lesson-bookmark-button{
+  background:var(--box);
+  color:var(--brand-dark);
+  cursor:default;
+}
+
+.lesson-bookmark-status{
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  white-space:nowrap;
+}
 .lesson-article h1{scroll-margin-top:130px}
 .lesson-section{scroll-margin-top:130px;margin-top:38px}
 .lesson-section h2{font-family:"Frank Ruhl Libre",serif;color:var(--brand-dark);font-size:clamp(26px,4vw,32px);line-height:1.25;margin:0 0 14px;border-top:1px solid rgba(201,168,106,.45);padding-top:28px}
@@ -335,6 +390,10 @@ a:hover{text-decoration:underline}
   background:var(--source);
   border:1px solid rgba(201,168,106,.55);
   border-radius:20px;
+}
+
+.series-progress[hidden]{
+  display:none;
 }
 
 .series-progress-button{
