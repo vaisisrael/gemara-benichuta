@@ -391,19 +391,7 @@ def render_markdown(
             text = block[2:].strip()
             if re.fullmatch(r"שיעור\s+\d+", text):
                 if not kicker_seen:
-                    lesson_number = html.escape(meta.get("lesson_number", ""), quote=True)
-                    out.append(
-                        '<div class="lesson-kicker" '
-                        'data-lesson-completion '
-                        f'data-lesson-number="{lesson_number}" '
-                        'aria-label="שמירת סימנייה לשיעור">'
-                        f'<span>{inline_markdown(text, glossary)}</span>'
-                        '<button class="lesson-bookmark-button" type="button" data-complete-lesson>'
-                        '🔖 לשמור סימנייה'
-                        '</button>'
-                        '<span class="lesson-bookmark-status" data-completion-status aria-live="polite"></span>'
-                        '</div>'
-                    )
+                    out.append(f'<p class="lesson-kicker">{inline_markdown(text, glossary)}</p>')
                     kicker_seen = True
                 continue
             if not title_seen:
@@ -574,6 +562,58 @@ def render_lesson_bottom_nav(next_lesson: Lesson | None) -> str:
 </nav>'''
 
 
+def lesson_feedback_html(lesson: Lesson) -> str:
+    lesson_number = html.escape(
+        lesson.meta.get("lesson_number", ""),
+        quote=True,
+    )
+
+    ratings = [
+        "ברור מאוד",
+        "די ברור",
+        "ברור בחלקו",
+        "היה לי קשה",
+        "לא הצלחתי לעקוב",
+    ]
+
+    rating_inputs = "\n".join(
+        '<label class="lesson-feedback-option">'
+        f'<input type="radio" name="clarity_rating" value="{html.escape(rating, quote=True)}">'
+        f'<span>{html.escape(rating)}</span>'
+        '</label>'
+        for rating in ratings
+    )
+
+    return f'''<section
+  class="lesson-feedback"
+  data-lesson-feedback
+  data-lesson-number="{lesson_number}"
+  aria-label="משוב על השיעור"
+>
+  <strong>עד כמה השיעור היה ברור?</strong>
+  <p class="lesson-feedback-intro">אפשר לבחור דירוג, להוסיף הערה, או לשלוח את שניהם.</p>
+
+  <form data-feedback-form>
+    <fieldset class="lesson-feedback-options">
+      <legend>דירוג בהירות השיעור</legend>
+      {rating_inputs}
+    </fieldset>
+
+    <textarea
+      name="comment"
+      rows="3"
+      maxlength="3000"
+      placeholder="הערה, הצעה או מקום שכדאי להסביר אחרת"
+      aria-label="הערה על השיעור"
+    ></textarea>
+
+    <div class="lesson-feedback-actions">
+      <button class="button lesson-feedback-submit" type="submit">שליחת משוב</button>
+      <p class="lesson-feedback-status" data-feedback-status aria-live="polite"></p>
+    </div>
+  </form>
+</section>'''
+
 def lesson_completion_html(
     lesson: Lesson,
     next_lesson: Lesson | None,
@@ -653,7 +693,9 @@ def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str
         f'<a href="#{section_id}">{html.escape(label)}</a>'
         for section_id, label in lesson.toc
     )
+    completion = lesson_completion_html(lesson, next_lesson)
     prev_next = render_lesson_bottom_nav(next_lesson)
+    feedback = lesson_feedback_html(lesson)
     whatsapp_signup = whatsapp_signup_html()
     return f'''{html_head(f"שיעור {lesson_number} — {title}", meta)}
 <body>
@@ -669,6 +711,7 @@ def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str
   </aside>
   <article class="lesson-article">
     {lesson.html_body}
+    {completion}
     {whatsapp_signup}
     {prev_next}
   </article>
@@ -722,7 +765,6 @@ def render_lessons_index(lessons: list[Lesson]) -> str:
   class="series-progress"
   data-series-progress
   data-lesson-numbers="{numbers_attribute}"
-  hidden
 >
   <a
     class="button primary series-progress-button"
