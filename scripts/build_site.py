@@ -104,7 +104,7 @@ def copy_if_exists(src: Path, dst: Path) -> None:
 
 def copy_static_site() -> None:
     # Copy the existing static shell first. Generated lesson pages overwrite it.
-    for name in ["index.html", "assets", "he", "en", "manifest.webmanifest"]:
+    for name in ["index.html", "assets", "he", "en", "manifest.webmanifest", "service-worker.js"]:
         copy_if_exists(ROOT / name, DIST / name)
 
 
@@ -511,11 +511,14 @@ def html_head(title: str, meta: dict[str, str] | None = None) -> str:
 {google_tag_html()}
   <title>{html.escape(page_title)} | {SITE_NAME}</title>
   <meta name="description" content="{html.escape(desc, quote=True)}">
+  <meta name="theme-color" content="#3F5F4A">
   <meta property="og:title" content="{html.escape(og_title, quote=True)}">
   <meta property="og:description" content="{html.escape(og_desc, quote=True)}">
   <meta property="og:type" content="article">
   {og_image_tag}
   <link rel="manifest" href="{BASE_PATH}/manifest.webmanifest">
+  <link rel="icon" href="{BASE_PATH}/assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="{BASE_PATH}/assets/icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Noto+Sans+Hebrew:wght@400;500;700&display=swap" rel="stylesheet">
@@ -668,6 +671,31 @@ def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str
 {site_footer()}'''
 
 
+def lesson_start_location(meta: dict[str, str]) -> tuple[str, str]:
+    """Return the conventional daf/amud marker for the lesson's starting point.
+
+    Examples:
+    daf ב, amud א -> ב.
+    daf ב, amud ב -> ב:
+    daf ב, amud א-ב -> ב.  (the lesson starts on amud א)
+    """
+    daf = meta.get("daf", "").strip()
+    amud = meta.get("amud", "").strip()
+
+    if not daf or not amud:
+        return "", ""
+
+    start_amud = re.split(r"[-–—־]", amud, maxsplit=1)[0].strip()
+    punctuation = "." if start_amud == "א" else ":" if start_amud == "ב" else ""
+
+    if not punctuation:
+        return "", ""
+
+    marker = f"{daf}{punctuation}"
+    accessible = f"דף {daf} עמוד {start_amud}"
+    return marker, accessible
+
+
 def render_lessons_index(lessons: list[Lesson]) -> str:
     sorted_lessons = sorted(
         lessons,
@@ -690,10 +718,23 @@ def render_lessons_index(lessons: list[Lesson]) -> str:
         title = html.escape(meta.get("title", ""))
         slug = html.escape(raw_number, quote=True)
         desc = html.escape(meta.get("core_point") or meta.get("seo_description") or "")
+        daf_marker, daf_accessible = lesson_start_location(meta)
+        daf_html = ""
+
+        if daf_marker:
+            daf_html = (
+                f'<span class="lesson-daf" title="{html.escape(daf_accessible, quote=True)}" '
+                f'aria-label="{html.escape(daf_accessible, quote=True)}">'
+                f'{html.escape(daf_marker)}'
+                '</span>'
+            )
 
         rows.append(
             f'''<a class="lesson-row" href="{BASE_PATH}/he/lessons/{slug}.html">
-  <span class="lesson-number">{number}</span>
+  <span class="lesson-number">
+    <span class="lesson-number-value">{number}</span>
+    {daf_html}
+  </span>
   <span class="lesson-title">{title}</span>
   <span class="lesson-desc">{desc}</span>
 </a>'''
