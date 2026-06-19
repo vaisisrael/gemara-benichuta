@@ -776,7 +776,7 @@ def render_lessons_index(lessons: list[Lesson]) -> str:
 <body>
 {site_header("שיעורים")}
 <main class="page narrow-page">
-  <h1>כל שיעורי הסדרה</h1>
+  <h1>כל שיעורי הסדרה במסכת בבא קמא</h1>
   <p class="lead small">השיעורים מוצגים לפי סדר לימודי. מומלץ להתחיל מן השיעור הראשון.</p>
   {progress_html}
   <div class="lesson-list">
