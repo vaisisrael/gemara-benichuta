@@ -12,6 +12,131 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+
+  /*
+   * התקנה למסך הבית (PWA)
+   * הפריט מתווסף לתפריט רק כשיש פעולה רלוונטית למכשיר.
+   */
+  let deferredInstallPrompt = null;
+
+  const isStandalone = () => (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true
+  );
+
+  const isIos = () => (
+    (/iphone|ipad|ipod/i.test(window.navigator.userAgent) ||
+      (window.navigator.userAgent.includes('Macintosh') && window.navigator.maxTouchPoints > 1)) &&
+    !window.MSStream
+  );
+
+  function ensureInstallDialog() {
+    let dialog = document.querySelector('[data-pwa-install-dialog]');
+
+    if (dialog) {
+      return dialog;
+    }
+
+    dialog = document.createElement('dialog');
+    dialog.className = 'pwa-install-dialog';
+    dialog.dataset.pwaInstallDialog = '';
+    dialog.innerHTML = `
+      <div class="pwa-install-dialog-inner">
+        <h2>הוספה למסך הבית</h2>
+        <p>באייפון ובאייפד אפשר להוסיף את האתר כאייקון:</p>
+        <ol>
+          <li>לחצו על כפתור השיתוף בדפדפן.</li>
+          <li>בחרו „הוספה למסך הבית”.</li>
+          <li>אשרו באמצעות „הוסף”.</li>
+        </ol>
+        <div class="pwa-install-dialog-actions">
+          <button class="button secondary" type="button" data-pwa-dialog-close>סגירה</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(dialog);
+
+    dialog.querySelector('[data-pwa-dialog-close]')?.addEventListener('click', () => {
+      dialog.close();
+    });
+
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) {
+        dialog.close();
+      }
+    });
+
+    return dialog;
+  }
+
+  function addInstallMenuItem() {
+    if (!nav || nav.querySelector('[data-pwa-install]')) {
+      return nav?.querySelector('[data-pwa-install]') || null;
+    }
+
+    const installButton = document.createElement('button');
+    installButton.type = 'button';
+    installButton.className = 'pwa-install-nav';
+    installButton.dataset.pwaInstall = '';
+    installButton.textContent = '📱 הוספה למסך הבית';
+    installButton.hidden = true;
+    nav.appendChild(installButton);
+
+    installButton.addEventListener('click', async () => {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        installButton.hidden = true;
+      } else if (isIos() && !isStandalone()) {
+        const dialog = ensureInstallDialog();
+        if (typeof dialog.showModal === 'function') {
+          dialog.showModal();
+        } else {
+          window.alert('לחצו על שיתוף ובחרו „הוספה למסך הבית”.');
+        }
+      }
+
+      if (btn && nav.classList.contains('is-open')) {
+        nav.classList.remove('is-open');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    return installButton;
+  }
+
+  const installMenuItem = addInstallMenuItem();
+
+  if (installMenuItem && isIos() && !isStandalone()) {
+    installMenuItem.hidden = false;
+  }
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+
+    if (installMenuItem && !isStandalone()) {
+      installMenuItem.hidden = false;
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    if (installMenuItem) {
+      installMenuItem.hidden = true;
+    }
+  });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register(`${BASE_PATH}/service-worker.js`).catch(() => {
+        // האתר ממשיך לפעול גם אם רישום ה-Service Worker נכשל.
+      });
+    });
+  }
+
   // Public footer should not display internal planning notes such as future /en/ support.
   document.querySelectorAll('.site-footer p').forEach((p, index) => {
     if (index > 0 || p.textContent.includes('/en/') || p.textContent.includes('אנגלית')) {
