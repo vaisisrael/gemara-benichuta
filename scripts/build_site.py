@@ -55,6 +55,7 @@ NAV_ITEMS = [
     ("שיעורים", f"{BASE_PATH}/he/lessons/"),
     ("איך לומדים כאן?", f"{BASE_PATH}/he/how-to-learn.html"),
     ("אודות", f"{BASE_PATH}/he/about.html"),
+    ("יצירת קשר", "mailto:gmara.benichuta@gmail.com?subject=%D7%A9%D7%90%D7%9C%D7%94%20%D7%90%D7%95%20%D7%94%D7%A6%D7%A2%D7%94%20%E2%80%94%20%D7%92%D7%9E%D7%A8%D7%90%20%D7%9C%D7%9E%D7%AA%D7%97%D7%99%D7%9C%D7%99%D7%9D%20%D7%91%D7%A0%D7%99%D7%97%D7%95%D7%AA%D7%90"),
 ]
 
 HEADING_IDS = {
@@ -562,7 +563,7 @@ def site_header(active: str) -> str:
 
 def site_footer() -> str:
     return f'''<footer class="site-footer">
-  <p>© {SITE_NAME}</p>
+  <p>© {SITE_NAME} · <a href="{BASE_PATH}/he/privacy.html">מדיניות פרטיות</a> · <a href="mailto:gmara.benichuta@gmail.com?subject=%D7%A9%D7%90%D7%9C%D7%94%20%D7%90%D7%95%20%D7%94%D7%A6%D7%A2%D7%94%20%E2%80%94%20%D7%92%D7%9E%D7%A8%D7%90%20%D7%9C%D7%9E%D7%AA%D7%97%D7%99%D7%9C%D7%99%D7%9D%20%D7%91%D7%A0%D7%99%D7%97%D7%95%D7%AA%D7%90">יצירת קשר</a></p>
 </footer>
 <script src="{BASE_PATH}/assets/js/site.js"></script>
 <script src="{BASE_PATH}/assets/js/gemara-glossary-tooltips.js" defer></script>
