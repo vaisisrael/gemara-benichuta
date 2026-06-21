@@ -458,6 +458,27 @@ def render_markdown(
             out.append("</ol>")
             continue
 
+        image_match = re.fullmatch(
+            r"!\[([^\]]*)\]\(([^)]+)\)",
+            block.strip(),
+        )
+
+        if image_match:
+            alt_text = image_match.group(1).strip()
+            image_src = image_match.group(2).strip()
+
+            if image_src.startswith("/"):
+                image_src = f"{BASE_PATH}{image_src}"
+
+            out.append(
+                '<figure class="lesson-illustration">'
+                f'<img src="{html.escape(image_src, quote=True)}" '
+                f'alt="{html.escape(alt_text, quote=True)}" '
+                'loading="lazy">'
+                "</figure>"
+            )
+            continue
+
         paragraph = " ".join(block.splitlines())
         out.append(f"<p>{inline_markdown(paragraph, glossary)}</p>")
 
