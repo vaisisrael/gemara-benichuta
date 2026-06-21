@@ -923,4 +923,130 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  /*
+   * הגדלת תמונות בתוך שיעורים.
+   * התמונות נשארות רגילות בקובצי ה-Markdown; לחיצה או הקשה פותחת
+   * תצוגה מוגדלת, עם תמיכה במקלדת ובתמונות שנטענות דינמית.
+   */
+  const zoomableImageSelector = [
+    '.lesson-article .lesson-illustration img',
+    '.lesson-article .daf-image-display img',
+  ].join(', ');
+
+  let imageLightbox = null;
+  let imageLightboxImage = null;
+  let imageLightboxClose = null;
+  let imageLightboxTrigger = null;
+
+  function ensureImageLightbox() {
+    if (imageLightbox) return imageLightbox;
+
+    imageLightbox = document.createElement('div');
+    imageLightbox.className = 'image-lightbox';
+    imageLightbox.setAttribute('role', 'dialog');
+    imageLightbox.setAttribute('aria-modal', 'true');
+    imageLightbox.setAttribute('aria-label', 'תצוגת תמונה מוגדלת');
+    imageLightbox.setAttribute('aria-hidden', 'true');
+    imageLightbox.innerHTML = `
+      <button class="image-lightbox-close" type="button" aria-label="סגירת התמונה">×</button>
+      <div class="image-lightbox-stage">
+        <img src="" alt="">
+      </div>
+    `;
+
+    document.body.appendChild(imageLightbox);
+    imageLightboxImage = imageLightbox.querySelector('img');
+    imageLightboxClose = imageLightbox.querySelector('.image-lightbox-close');
+
+    imageLightboxClose.addEventListener('click', closeImageLightbox);
+
+    imageLightbox.addEventListener('click', (event) => {
+      if (event.target === imageLightbox || event.target.classList.contains('image-lightbox-stage')) {
+        closeImageLightbox();
+      }
+    });
+
+    return imageLightbox;
+  }
+
+  function prepareZoomableImage(image) {
+    if (!image || image.dataset.imageZoomReady === 'true') return;
+
+    image.dataset.imageZoomReady = 'true';
+    image.classList.add('is-zoomable');
+    image.setAttribute('tabindex', '0');
+    image.setAttribute('role', 'button');
+    image.setAttribute('aria-label', image.alt
+      ? `הגדלת התמונה: ${image.alt}`
+      : 'הגדלת התמונה');
+  }
+
+  function openImageLightbox(image) {
+    ensureImageLightbox();
+    imageLightboxTrigger = image;
+    imageLightboxImage.src = image.currentSrc || image.src;
+    imageLightboxImage.alt = image.alt || '';
+    imageLightbox.classList.add('is-open');
+    imageLightbox.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('image-lightbox-open');
+    imageLightboxClose.focus();
+  }
+
+  function closeImageLightbox() {
+    if (!imageLightbox || !imageLightbox.classList.contains('is-open')) return;
+
+    imageLightbox.classList.remove('is-open');
+    imageLightbox.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('image-lightbox-open');
+    imageLightboxImage.src = '';
+
+    if (imageLightboxTrigger && document.contains(imageLightboxTrigger)) {
+      imageLightboxTrigger.focus();
+    }
+
+    imageLightboxTrigger = null;
+  }
+
+  document.querySelectorAll(zoomableImageSelector).forEach(prepareZoomableImage);
+
+  document.addEventListener('click', (event) => {
+    const image = event.target.closest(zoomableImageSelector);
+    if (!image) return;
+
+    event.preventDefault();
+    openImageLightbox(image);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && imageLightbox?.classList.contains('is-open')) {
+      closeImageLightbox();
+      return;
+    }
+
+    if ((event.key === 'Enter' || event.key === ' ') && event.target.matches?.(zoomableImageSelector)) {
+      event.preventDefault();
+      openImageLightbox(event.target);
+    }
+  });
+
+  const lessonArticle = document.querySelector('.lesson-article');
+  if (lessonArticle) {
+    const imageObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (!(node instanceof Element)) return;
+
+          if (node.matches(zoomableImageSelector)) {
+            prepareZoomableImage(node);
+          }
+
+          node.querySelectorAll?.(zoomableImageSelector).forEach(prepareZoomableImage);
+        });
+      });
+    });
+
+    imageObserver.observe(lessonArticle, { childList: true, subtree: true });
+  }
+
 });
