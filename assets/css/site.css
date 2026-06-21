@@ -844,3 +844,89 @@ select:focus-visible,
   margin: 0 auto;
   border-radius: 14px;
 }
+
+/* הגדלת תמונות בשיעורים */
+.lesson-article img.is-zoomable{
+  cursor:zoom-in;
+}
+
+.lesson-article img.is-zoomable:focus-visible{
+  outline:3px solid var(--gold);
+  outline-offset:4px;
+}
+
+body.image-lightbox-open{
+  overflow:hidden;
+}
+
+.image-lightbox{
+  position:fixed;
+  inset:0;
+  z-index:10000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:12px;
+  background:rgba(12,16,14,.94);
+}
+
+.image-lightbox.is-open{
+  display:flex;
+}
+
+.image-lightbox-stage{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:100%;
+  overflow:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+
+.image-lightbox-stage img{
+  display:block;
+  width:auto;
+  height:auto;
+  max-width:calc(100vw - 24px);
+  max-height:calc(100dvh - 24px);
+  object-fit:contain;
+  border-radius:8px;
+  box-shadow:0 14px 48px rgba(0,0,0,.38);
+  touch-action:pinch-zoom;
+}
+
+.image-lightbox-close{
+  position:fixed;
+  top:max(10px, env(safe-area-inset-top));
+  inset-inline-end:max(10px, env(safe-area-inset-right));
+  z-index:10001;
+  display:grid;
+  place-items:center;
+  width:46px;
+  height:46px;
+  padding:0;
+  border:1px solid rgba(255,255,255,.45);
+  border-radius:999px;
+  background:rgba(0,0,0,.62);
+  color:#fff;
+  font:400 34px/1 Arial,sans-serif;
+  cursor:pointer;
+}
+
+.image-lightbox-close:focus-visible{
+  outline:3px solid #fff;
+  outline-offset:3px;
+}
+
+@media (max-width:850px){
+  .lesson-illustration::after{
+    content:"הקישו להגדלה";
+    display:block;
+    margin-top:8px;
+    color:var(--muted);
+    font-size:14px;
+  }
+}
+
