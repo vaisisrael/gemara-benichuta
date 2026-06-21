@@ -790,3 +790,22 @@ a:hover{text-decoration:underline}
     min-height:440px;
   }
 }
+
+
+.lesson-article {
+  min-width: 0;
+}
+
+.lesson-illustration {
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+.lesson-illustration img {
+  display: block;
+  width: min(100%, 900px);
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 14px;
+}
