@@ -1,5 +1,5 @@
 const BASE_PATH = '/gemara-benichuta';
-const CACHE_NAME = 'gemara-benichuta-v1';
+const CACHE_NAME = 'gemara-benichuta-v2';
 const OFFLINE_URL = `${BASE_PATH}/he/`;
 
 const CORE_ASSETS = [
