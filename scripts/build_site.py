@@ -490,8 +490,10 @@ def render_markdown(
 def nav_html(active: str) -> str:
     links = []
     for label, href in NAV_ITEMS:
-        cls = ' class="active"' if label == active else ""
-        links.append(f'<a{cls} href="{href}">{label}</a>')
+        if label == active:
+            links.append(f'<a class="active" aria-current="page" href="{href}">{label}</a>')
+        else:
+            links.append(f'<a href="{href}">{label}</a>')
     return "\n".join(links)
 
 
@@ -549,7 +551,8 @@ def html_head(title: str, meta: dict[str, str] | None = None) -> str:
 
 
 def site_header(active: str) -> str:
-    return f'''<header class="site-header">
+    return f'''<a class="skip-link" href="#main-content">דלגו לתוכן הראשי</a>
+<header class="site-header">
   <a class="brand" href="{BASE_PATH}/he/">
     <span class="brand-title">{SITE_NAME}</span>
     <span class="brand-subtitle">{SITE_SUBTITLE}</span>
@@ -563,7 +566,7 @@ def site_header(active: str) -> str:
 
 def site_footer() -> str:
     return f'''<footer class="site-footer">
-  <p>© {SITE_NAME} · <a href="{BASE_PATH}/he/privacy.html">מדיניות פרטיות</a> · <a href="mailto:gmara.benichuta@gmail.com?subject=%D7%A9%D7%90%D7%9C%D7%94%20%D7%90%D7%95%20%D7%94%D7%A6%D7%A2%D7%94%20%E2%80%94%20%D7%92%D7%9E%D7%A8%D7%90%20%D7%9C%D7%9E%D7%AA%D7%97%D7%99%D7%9C%D7%99%D7%9D%20%D7%91%D7%A0%D7%99%D7%97%D7%95%D7%AA%D7%90">יצירת קשר</a></p>
+  <p>© {SITE_NAME} · <a href="{BASE_PATH}/he/privacy.html">מדיניות פרטיות</a> · <a href="{BASE_PATH}/he/accessibility.html">הצהרת נגישות</a> · <a href="mailto:gmara.benichuta@gmail.com?subject=%D7%A9%D7%90%D7%9C%D7%94%20%D7%90%D7%95%20%D7%94%D7%A6%D7%A2%D7%94%20%E2%80%94%20%D7%92%D7%9E%D7%A8%D7%90%20%D7%9C%D7%9E%D7%AA%D7%97%D7%99%D7%9C%D7%99%D7%9D%20%D7%91%D7%A0%D7%99%D7%97%D7%95%D7%AA%D7%90">יצירת קשר</a></p>
 </footer>
 <script src="{BASE_PATH}/assets/js/site.js"></script>
 <script src="{BASE_PATH}/assets/js/gemara-glossary-tooltips.js" defer></script>
@@ -674,7 +677,7 @@ def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str
     return f'''{html_head(f"שיעור {lesson_number} — {title}", meta)}
 <body>
 {site_header("שיעורים")}
-<main class="lesson-layout">
+<main id="main-content" class="lesson-layout" tabindex="-1">
   <aside class="lesson-toc" aria-label="ניווט בתוך השיעור">
     <details open>
       <summary>ניווט</summary>
@@ -797,7 +800,7 @@ def render_lessons_index(lessons: list[Lesson]) -> str:
     return f'''{html_head("כל שיעורי הסדרה")}
 <body>
 {site_header("שיעורים")}
-<main class="page narrow-page">
+<main id="main-content" class="page narrow-page" tabindex="-1">
   <h1>כל שיעורי הסדרה במסכת בבא קמא</h1>
   <p class="lead small">השיעורים מוצגים לפי סדר לימודי. מומלץ להתחיל מן השיעור הראשון.</p>
   {progress_html}
