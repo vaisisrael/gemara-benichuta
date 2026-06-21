@@ -5,10 +5,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const btn = document.querySelector('.menu-toggle');
   const nav = document.querySelector('#main-nav');
 
+  function closeMainNav({ returnFocus = false } = {}) {
+    if (!btn || !nav) return;
+    nav.classList.remove('is-open');
+    btn.setAttribute('aria-expanded', 'false');
+    if (returnFocus) btn.focus();
+  }
+
   if (btn && nav) {
     btn.addEventListener('click', () => {
       const isOpen = nav.classList.toggle('is-open');
       btn.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && nav.classList.contains('is-open')) {
+        closeMainNav({ returnFocus: true });
+      }
     });
   }
 
@@ -99,8 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (btn && nav.classList.contains('is-open')) {
-        nav.classList.remove('is-open');
-        btn.setAttribute('aria-expanded', 'false');
+        closeMainNav();
       }
     });
 
