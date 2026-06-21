@@ -507,6 +507,41 @@ a:hover{text-decoration:underline}
 .pwa-install-dialog-actions{display:flex;justify-content:flex-end;gap:10px}
 .pwa-install-dialog button{border:0;cursor:pointer;font:inherit}
 
+
+/* נגישות: דילוג לתוכן ומיקוד מקלדת */
+.skip-link{
+  position:fixed;
+  inset-inline-start:16px;
+  top:10px;
+  z-index:1000;
+  transform:translateY(-160%);
+  padding:9px 14px;
+  border-radius:999px;
+  background:var(--brand-dark);
+  color:#fff;
+  font-size:16px;
+  font-weight:700;
+  line-height:1.35;
+  box-shadow:0 8px 24px rgba(31,41,51,.22);
+}
+.skip-link:focus{
+  transform:translateY(0);
+  text-decoration:none;
+}
+
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible{
+  outline:3px solid var(--gold);
+  outline-offset:3px;
+}
+
+#main-content:focus{outline:none}
+
 @media (max-width:850px){
   body{font-size:19px;line-height:1.82}
 
