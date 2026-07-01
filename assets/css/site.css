@@ -930,3 +930,93 @@ body.image-lightbox-open{
   }
 }
 
+
+/* חיפוש בשיעורים */
+.lesson-search{
+  margin:30px 0 22px;
+  padding:20px;
+  background:var(--white);
+  border:1px solid rgba(63,95,74,.14);
+  border-radius:var(--radius);
+  box-shadow:0 10px 30px rgba(31,41,51,.05);
+  scroll-margin-top:104px;
+}
+.lesson-search > label{
+  display:block;
+  margin-bottom:8px;
+  color:var(--brand-dark);
+  font-weight:700;
+  font-size:19px;
+}
+.lesson-search-field{position:relative}
+.lesson-search-icon{
+  position:absolute;
+  inset-inline-start:15px;
+  top:50%;
+  transform:translateY(-50%);
+  color:var(--brand);
+  font-size:24px;
+  line-height:1;
+  pointer-events:none;
+}
+.lesson-search input[type="search"]{
+  width:100%;
+  min-height:52px;
+  padding:10px 48px 10px 16px;
+  border:1px solid rgba(63,95,74,.28);
+  border-radius:16px;
+  background:#fff;
+  color:var(--text);
+  font:inherit;
+  font-size:18px;
+}
+.lesson-search input[type="search"]:focus{
+  outline:3px solid rgba(201,168,106,.34);
+  border-color:var(--brand);
+}
+.lesson-search-help,
+.lesson-search-status{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:15px;
+  line-height:1.55;
+}
+.lesson-search-status:empty{display:none}
+.lesson-search.is-active + .lesson-list .lesson-row.is-search-result{
+  grid-template-rows:auto auto auto;
+}
+.lesson-search-snippet{
+  grid-column:2;
+  display:block;
+  margin-top:4px;
+  padding-top:9px;
+  border-top:1px solid rgba(63,95,74,.12);
+  color:var(--muted);
+  font-size:16px;
+  line-height:1.65;
+}
+.lesson-search-snippet mark,
+.search-hit{
+  padding:0 .12em;
+  border-radius:.22em;
+  background:rgba(201,168,106,.42);
+  color:inherit;
+}
+.search-hit-target{
+  background:rgba(201,168,106,.68);
+  outline:2px solid rgba(63,95,74,.20);
+  outline-offset:2px;
+}
+
+@media (max-width:850px){
+  .lesson-search{
+    margin-top:24px;
+    padding:16px;
+    scroll-margin-top:88px;
+  }
+  .lesson-search input[type="search"]{font-size:17px}
+  .lesson-search-snippet{
+    grid-column:1 / -1;
+    font-size:15px;
+  }
+}
