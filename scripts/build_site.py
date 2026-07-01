@@ -14,6 +14,7 @@ generates Open Graph images for lesson links.
 from __future__ import annotations
 
 import html
+import json
 import os
 import re
 import shutil
@@ -53,6 +54,7 @@ GLOSSARY_PATH = ROOT / "he" / "מילון.md"
 NAV_ITEMS = [
     ("בית", f"{BASE_PATH}/he/"),
     ("שיעורים", f"{BASE_PATH}/he/lessons/"),
+    ("חיפוש", f"{BASE_PATH}/he/lessons/#lesson-search"),
     ("איך לומדים כאן?", f"{BASE_PATH}/he/how-to-learn.html"),
     ("אודות", f"{BASE_PATH}/he/about.html"),
     ("יצירת קשר", "mailto:gmara.benichuta@gmail.com?subject=%D7%A9%D7%90%D7%9C%D7%94%20%D7%90%D7%95%20%D7%94%D7%A6%D7%A2%D7%94%20%E2%80%94%20%D7%92%D7%9E%D7%A8%D7%90%20%D7%9C%D7%9E%D7%AA%D7%97%D7%99%D7%9C%D7%99%D7%9D%20%D7%91%D7%A0%D7%99%D7%97%D7%95%D7%AA%D7%90"),
@@ -569,6 +571,7 @@ def site_footer() -> str:
   <p>© {SITE_NAME} · <a href="{BASE_PATH}/he/privacy.html">מדיניות פרטיות</a> · <a href="{BASE_PATH}/he/accessibility.html">הצהרת נגישות</a> · <a href="mailto:gmara.benichuta@gmail.com?subject=%D7%A9%D7%90%D7%9C%D7%94%20%D7%90%D7%95%20%D7%94%D7%A6%D7%A2%D7%94%20%E2%80%94%20%D7%92%D7%9E%D7%A8%D7%90%20%D7%9C%D7%9E%D7%AA%D7%97%D7%99%D7%9C%D7%99%D7%9D%20%D7%91%D7%A0%D7%99%D7%97%D7%95%D7%AA%D7%90">יצירת קשר</a></p>
 </footer>
 <script src="{BASE_PATH}/assets/js/site.js"></script>
+<script src="{BASE_PATH}/assets/js/lesson-search.js" defer></script>
 <script src="{BASE_PATH}/assets/js/gemara-glossary-tooltips.js" defer></script>
 <script src="{BASE_PATH}/assets/js/shabbat-lock.js"></script>
 </body>
@@ -755,7 +758,7 @@ def render_lessons_index(lessons: list[Lesson]) -> str:
             )
 
         rows.append(
-            f'''<a class="lesson-row" href="{BASE_PATH}/he/lessons/{slug}.html">
+            f'''<a class="lesson-row" data-lesson-number="{number}" href="{BASE_PATH}/he/lessons/{slug}.html">
   <span class="lesson-number">
     <span class="lesson-number-value">{number}</span>
     {daf_html}
@@ -804,7 +807,23 @@ def render_lessons_index(lessons: list[Lesson]) -> str:
   <h1>כל שיעורי הסדרה במסכת בבא קמא</h1>
   <p class="lead small">השיעורים מוצגים לפי סדר לימודי. מומלץ להתחיל מן השיעור הראשון.</p>
   {progress_html}
-  <div class="lesson-list">
+  <section class="lesson-search" id="lesson-search" data-lesson-search aria-label="חיפוש בשיעורים">
+    <label for="lesson-search-input">חיפוש בשיעורים</label>
+    <div class="lesson-search-field">
+      <span class="lesson-search-icon" aria-hidden="true">⌕</span>
+      <input
+        id="lesson-search-input"
+        type="search"
+        inputmode="search"
+        autocomplete="off"
+        placeholder="הקלידו מילה או ביטוי"
+        data-lesson-search-input
+      >
+    </div>
+    <p class="lesson-search-help">החיפוש מתבצע בכל תוכן השיעורים. כמה מילים מצמצמות את התוצאות.</p>
+    <p class="lesson-search-status" data-lesson-search-status aria-live="polite"></p>
+  </section>
+  <div class="lesson-list" data-lesson-list>
     {rows_html}
   </div>
 </main>
@@ -821,6 +840,38 @@ def load_lessons(source_dir: Path, glossary: dict[str, GlossaryEntry]) -> list[L
         html_body, toc = render_markdown(body, meta, glossary)
         lessons.append(Lesson(meta=meta, body=body, html_body=html_body, toc=toc))
     return lessons
+
+
+def plain_text_from_html(value: str) -> str:
+    """Return compact visible text suitable for the client-side search index."""
+    value = re.sub(r"<script\b[^>]*>.*?</script>", " ", value, flags=re.IGNORECASE | re.DOTALL)
+    value = re.sub(r"<style\b[^>]*>.*?</style>", " ", value, flags=re.IGNORECASE | re.DOTALL)
+    value = re.sub(r"<button\b[^>]*>.*?</button>", " ", value, flags=re.IGNORECASE | re.DOTALL)
+    value = re.sub(r"<[^>]+>", " ", value)
+    value = html.unescape(value)
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def write_search_index(lessons: list[Lesson]) -> None:
+    items = []
+    for lesson in lessons:
+        meta = lesson.meta
+        lesson_number = meta.get("lesson_number", "").strip()
+        if not lesson_number:
+            continue
+        items.append({
+            "lesson_number": lesson_number,
+            "title": meta.get("title", "").strip(),
+            "url": f"{BASE_PATH}/he/lessons/{lesson_number}.html",
+            "text": plain_text_from_html(lesson.html_body),
+        })
+
+    data_dir = DIST / "assets" / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    (data_dir / "search-index-he.json").write_text(
+        json.dumps(items, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
 
 
 def build_hebrew_lessons(glossary: dict[str, GlossaryEntry]) -> None:
@@ -843,6 +894,7 @@ def build_hebrew_lessons(glossary: dict[str, GlossaryEntry]) -> None:
         )
 
     (lessons_out / "index.html").write_text(render_lessons_index(lessons), encoding="utf-8")
+    write_search_index(lessons)
 
 
 def generate_og_images_if_available() -> None:
