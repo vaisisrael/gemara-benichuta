@@ -5,6 +5,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const btn = document.querySelector('.menu-toggle');
   const nav = document.querySelector('#main-nav');
 
+  // Ensure the search entry exists on every page, including pages whose HTML
+  // may still be served from an older cached version.
+  function ensureSearchMenuItem() {
+    if (!nav || nav.querySelector('a[href*="#lesson-search"]')) return;
+
+    const searchLink = document.createElement('a');
+    searchLink.href = `${BASE_PATH}/he/lessons/#lesson-search`;
+    searchLink.textContent = 'חיפוש';
+
+    const lessonsLink = Array.from(nav.querySelectorAll('a')).find((link) =>
+      link.getAttribute('href') === `${BASE_PATH}/he/lessons/`
+    );
+
+    if (lessonsLink) {
+      lessonsLink.insertAdjacentElement('afterend', searchLink);
+    } else {
+      nav.appendChild(searchLink);
+    }
+  }
+
+  ensureSearchMenuItem();
+
   function closeMainNav({ returnFocus = false } = {}) {
     if (!btn || !nav) return;
     nav.classList.remove('is-open');
