@@ -1,5 +1,5 @@
 const BASE_PATH = '/gemara-benichuta';
-const CACHE_NAME = 'gemara-benichuta-v2';
+const CACHE_NAME = 'gemara-benichuta-v3';
 const OFFLINE_URL = `${BASE_PATH}/he/`;
 
 const CORE_ASSETS = [
@@ -7,6 +7,8 @@ const CORE_ASSETS = [
   `${BASE_PATH}/he/lessons/`,
   `${BASE_PATH}/assets/css/site.css`,
   `${BASE_PATH}/assets/js/site.js`,
+  `${BASE_PATH}/assets/js/lesson-search.js`,
+  `${BASE_PATH}/assets/data/search-index-he.json`,
   `${BASE_PATH}/assets/js/gemara-glossary-tooltips.js`,
   `${BASE_PATH}/assets/js/shabbat-lock.js`,
   `${BASE_PATH}/assets/icons/icon-192.png`,
