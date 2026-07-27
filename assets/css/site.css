@@ -1023,3 +1023,89 @@ body.image-lightbox-open{
 
 /* Search filtering: author display rules must not override the HTML hidden state. */
 .lesson-row[hidden]{display:none !important}
+
+/* חטיבות לימוד בדף כל השיעורים */
+.lesson-title-line{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.lesson-title-line .lesson-title{
+  min-width:0;
+  flex:1 1 auto;
+}
+.lesson-unit-wrap{
+  position:relative;
+  flex:0 0 auto;
+  display:inline-flex;
+}
+.lesson-unit-icon{
+  display:grid;
+  place-items:center;
+  width:34px;
+  height:34px;
+  border:1px solid rgba(201,168,106,.75);
+  border-radius:999px;
+  background:rgba(201,168,106,.16);
+  color:var(--brand-dark);
+  cursor:help;
+}
+.lesson-unit-icon svg{
+  display:block;
+  width:21px;
+  height:21px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.75;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.lesson-unit-icon:focus-visible{
+  outline:3px solid rgba(201,168,106,.55);
+  outline-offset:3px;
+}
+.lesson-unit-tooltip{
+  position:absolute;
+  z-index:40;
+  inset-inline-end:0;
+  top:43px;
+  width:min(320px,calc(100vw - 48px));
+  padding:12px 14px;
+  border:1px solid rgba(201,168,106,.8);
+  border-radius:14px;
+  background:var(--white);
+  box-shadow:0 14px 34px rgba(31,41,51,.17);
+  color:var(--text);
+  font-size:15px;
+  font-weight:400;
+  line-height:1.55;
+  opacity:0;
+  visibility:hidden;
+  transform:translateY(-4px);
+  transition:opacity .12s ease,transform .12s ease,visibility .12s ease;
+  pointer-events:none;
+}
+.lesson-unit-tooltip strong{
+  display:block;
+  margin-bottom:3px;
+  color:var(--brand-dark);
+  font-size:16px;
+}
+.lesson-unit-wrap:hover .lesson-unit-tooltip,
+.lesson-unit-wrap:focus-within .lesson-unit-tooltip,
+.lesson-unit-wrap.is-open .lesson-unit-tooltip{
+  opacity:1;
+  visibility:visible;
+  transform:translateY(0);
+  pointer-events:auto;
+}
+@media (max-width:850px){
+  .lesson-title-line{gap:9px}
+  .lesson-unit-icon{width:32px;height:32px}
+  .lesson-unit-tooltip{
+    position:fixed;
+    inset: auto 14px 14px 14px;
+    width:auto;
+  }
+}
