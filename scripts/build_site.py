@@ -60,6 +60,30 @@ NAV_ITEMS = [
     ("יצירת קשר", "mailto:gmara.benichuta@gmail.com?subject=%D7%A9%D7%90%D7%9C%D7%94%20%D7%90%D7%95%20%D7%94%D7%A6%D7%A2%D7%94%20%E2%80%94%20%D7%92%D7%9E%D7%A8%D7%90%20%D7%9C%D7%9E%D7%AA%D7%97%D7%99%D7%9C%D7%99%D7%9D%20%D7%91%D7%A0%D7%99%D7%97%D7%95%D7%AA%D7%90"),
 ]
 
+
+LEARNING_UNITS = {
+    "opening-mishnah": {
+        "title": "פתיחת המשנה: מפת הנזקים",
+        "summary": "המשנה מציגה את ארבעת אבות הנזיקין, מבחינה בין התכונות הייחודיות שלהם ומחפשת את הצד השווה המחייב.",
+        "icon": """<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>""",
+    },
+    "av-toldah": {
+        "title": "אב ותולדה",
+        "summary": "המילה „אבות” מלמדת שיש גם תולדות. הגמרא משווה לשבת ולטומאה כדי לברר אם דין התולדה כדין האב.",
+        "icon": """<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="5" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/><path d="M12 7.2v4.2M12 11.4H6v4.4M12 11.4h6v4.4"/></svg>""",
+    },
+    "keren": {
+        "title": "משפחת קרן",
+        "summary": "הגמרא מזהה את מקור הקרן, מבררת מה מאפיין אותה, מסווגת את תולדותיה ולבסוף קובעת שתולדות קרן כקרן.",
+        "icon": """<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.5 9.5C4.8 9.2 3.2 7.6 3 5c2.8.2 5 1.2 6.3 3.1M16.5 9.5c2.7-.3 4.3-1.9 4.5-4.5-2.8.2-5 1.2-6.3 3.1"/><path d="M7.5 9.5c0 5.2 1.6 8.5 4.5 9.5 2.9-1 4.5-4.3 4.5-9.5-1.2-1.1-2.7-1.7-4.5-1.7s-3.3.6-4.5 1.7Z"/><path d="M9.5 13h.01M14.5 13h.01M10.2 16.2c1.2.8 2.4.8 3.6 0"/></svg>""",
+    },
+    "shen-regel": {
+        "title": "המקורות לשן ולרגל",
+        "summary": "לאחר בירור קרן עוברת הגמרא לזהות את שן ורגל בפסוקים, ואחר כך לומדת מכל אחת על היקף האחרת.",
+        "icon": """<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3c-2 1-3 3-3 6 0 5 2 9 5 12 1-2 2-4 2-7 0 3 1 5 2 7 3-3 5-7 5-12 0-3-1-5-3-6-2 2-6 2-8 0z"/><path d="M12 8v6"/></svg>""",
+    },
+}
+
 HEADING_IDS = {
     "איפה אנחנו?": "where",
     "מה צריך לדעת לפני שנכנסים?": "before",
@@ -572,6 +596,7 @@ def site_footer() -> str:
 </footer>
 <script src="{BASE_PATH}/assets/js/site.js"></script>
 <script src="{BASE_PATH}/assets/js/lesson-search.js" defer></script>
+<script src="{BASE_PATH}/assets/js/lesson-units.js" defer></script>
 <script src="{BASE_PATH}/assets/js/gemara-glossary-tooltips.js" defer></script>
 <script src="{BASE_PATH}/assets/js/shabbat-lock.js"></script>
 </body>
@@ -757,13 +782,38 @@ def render_lessons_index(lessons: list[Lesson]) -> str:
                 '</span>'
             )
 
+        unit_id = meta.get("learning_unit", "").strip()
+        unit = LEARNING_UNITS.get(unit_id)
+        unit_html = ""
+
+        if unit:
+            unit_title = html.escape(unit["title"])
+            unit_summary = html.escape(unit["summary"])
+            unit_html = f'''<span class="lesson-unit-wrap">
+  <span
+    class="lesson-unit-icon"
+    role="button"
+    tabindex="0"
+    aria-expanded="false"
+    aria-label="{unit_title}"
+    data-lesson-unit-trigger
+  >{unit["icon"]}</span>
+  <span class="lesson-unit-tooltip" role="tooltip">
+    <strong>{unit_title}</strong>
+    <span>{unit_summary}</span>
+  </span>
+</span>'''
+
         rows.append(
             f'''<a class="lesson-row" data-lesson-number="{number}" href="{BASE_PATH}/he/lessons/{slug}.html">
   <span class="lesson-number">
     <span class="lesson-number-value">{number}</span>
     {daf_html}
   </span>
-  <span class="lesson-title">{title}</span>
+  <span class="lesson-title-line">
+    <span class="lesson-title">{title}</span>
+    {unit_html}
+  </span>
   <span class="lesson-desc">{desc}</span>
 </a>'''
         )
