@@ -634,6 +634,32 @@ def render_lesson_bottom_nav(next_lesson: Lesson | None) -> str:
 </nav>'''
 
 
+def lesson_quiz_html(lesson: Lesson) -> str:
+    quiz_url = lesson.meta.get("quiz_url", "").strip()
+    if not quiz_url:
+        return ""
+
+    lesson_number = html.escape(
+        lesson.meta.get("lesson_number", ""),
+        quote=True,
+    )
+    safe_quiz_url = html.escape(quiz_url, quote=True)
+
+    return f'''<section class="lesson-quiz" aria-label="בוחן על השיעור">
+  <strong>בדיקה קצרה: מה נשאר מהשיעור?</strong>
+  <p>10 שאלות קצרות שיעזרו לבדוק את ההבנה ולחזור על הרעיונות המרכזיים.</p>
+  <a
+    class="button secondary lesson-quiz-button"
+    href="{safe_quiz_url}"
+    target="_blank"
+    rel="noopener noreferrer"
+    data-quiz-start
+    data-lesson-number="{lesson_number}"
+  >להתחלת הבוחן</a>
+  <small>הבוחן נפתח ב־NotebookLM בחלון חדש, ללא צורך בהתחברות.</small>
+</section>'''
+
+
 def lesson_feedback_html(lesson: Lesson) -> str:
     lesson_number = html.escape(
         lesson.meta.get("lesson_number", ""),
@@ -698,6 +724,7 @@ def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str
         f'<a href="#{section_id}">{html.escape(label)}</a>'
         for section_id, label in lesson.toc
     )
+    quiz = lesson_quiz_html(lesson)
     feedback = lesson_feedback_html(lesson)
     prev_next = render_lesson_bottom_nav(next_lesson)
     whatsapp_signup = whatsapp_signup_html()
@@ -716,6 +743,7 @@ def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str
   </aside>
   <article class="lesson-article">
     {lesson.html_body}
+    {quiz}
     {feedback}
     {whatsapp_signup}
     {prev_next}
