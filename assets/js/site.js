@@ -946,6 +946,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // מדידת פתיחת בוחן חיצוני מתוך שיעור.
+  document.querySelectorAll('[data-quiz-start]').forEach((quizLink) => {
+    quizLink.addEventListener('click', () => {
+      if (typeof window.gtag !== 'function') return;
+
+      window.gtag('event', 'quiz_start_click', {
+        lesson_number: quizLink.dataset.lessonNumber || '',
+        quiz_provider: 'notebooklm',
+      });
+    });
+  });
+
   /*
    * הגדלת תמונות בתוך שיעורים.
    * התמונות נשארות רגילות בקובצי ה-Markdown; לחיצה או הקשה פותחת
