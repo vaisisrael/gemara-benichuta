@@ -647,7 +647,7 @@ def lesson_quiz_html(lesson: Lesson) -> str:
 
     return f'''<section class="lesson-quiz" aria-label="בוחן על השיעור">
   <strong>בדיקה קצרה: מה נשאר מהשיעור?</strong>
-  <p>10 שאלות קצרות שיעזרו לבדוק את ההבנה ולחזור על הרעיונות המרכזיים.</p>
+  <p>שאלות קצרות שיעזרו לבדוק את ההבנה ולחזור על הרעיונות המרכזיים.</p>
   <a
     class="button secondary lesson-quiz-button"
     href="{safe_quiz_url}"
