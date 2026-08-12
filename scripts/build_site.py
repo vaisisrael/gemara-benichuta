@@ -82,6 +82,11 @@ LEARNING_UNITS = {
         "summary": "לאחר בירור קרן עוברת הגמרא לזהות את שן ורגל בפסוקים, ואחר כך לומדת מכל אחת על היקף האחרת.",
         "icon": """<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3c-2 1-3 3-3 6 0 5 2 9 5 12 1-2 2-4 2-7 0 3 1 5 2 7 3-3 5-7 5-12 0-3-1-5-3-6-2 2-6 2-8 0z"/><path d="M12 8v6"/></svg>""",
     },
+    "bor": {
+        "title": "משפחת בור",
+        "summary": "הגמרא עוברת לבור כדי לברר מה נחשב אב ומה נחשב תולדה, ומה מקור החיוב בנזק ובמיתה.",
+        "icon": """<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><ellipse cx="12" cy="7" rx="7" ry="3"/><path d="M5 7v7c0 2.8 3.1 5 7 5s7-2.2 7-5V7"/><path d="M8 10.5v4.5M16 10.5v4.5"/></svg>""",
+    },
 }
 
 HEADING_IDS = {
