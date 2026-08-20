@@ -85,7 +85,7 @@ LEARNING_UNITS = {
     "bor": {
         "title": "משפחת בור",
         "summary": "הגמרא עוברת לבור כדי לברר מה נחשב אב ומה נחשב תולדה, ומה מקור החיוב בנזק ובמיתה.",
-        "icon": """<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><ellipse cx="12" cy="7" rx="7" ry="3"/><path d="M5 7v7c0 2.8 3.1 5 7 5s7-2.2 7-5V7"/><path d="M8 10.5v4.5M16 10.5v4.5"/></svg>""",
+        "icon": """<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 7h6M15 7h6"/><path d="M9 7v6c0 2.8 1.4 4.8 3 6 1.6-1.2 3-3.2 3-6V7"/><path d="M10.5 11.5c.6.4 1 .6 1.5.6s.9-.2 1.5-.6"/></svg>""",
     },
 }
 
