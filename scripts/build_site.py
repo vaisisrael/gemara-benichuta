@@ -78,9 +78,9 @@ LEARNING_UNITS = {
         "icon": """<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.5 9.5C4.8 9.2 3.2 7.6 3 5c2.8.2 5 1.2 6.3 3.1M16.5 9.5c2.7-.3 4.3-1.9 4.5-4.5-2.8.2-5 1.2-6.3 3.1"/><path d="M7.5 9.5c0 5.2 1.6 8.5 4.5 9.5 2.9-1 4.5-4.3 4.5-9.5-1.2-1.1-2.7-1.7-4.5-1.7s-3.3.6-4.5 1.7Z"/><path d="M9.5 13h.01M14.5 13h.01M10.2 16.2c1.2.8 2.4.8 3.6 0"/></svg>""",
     },
     "shen-regel": {
-        "title": "המקורות לשן ולרגל",
-        "summary": "לאחר בירור קרן עוברת הגמרא לזהות את שן ורגל בפסוקים, ואחר כך לומדת מכל אחת על היקף האחרת.",
-        "icon": """<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3c-2 1-3 3-3 6 0 5 2 9 5 12 1-2 2-4 2-7 0 3 1 5 2 7 3-3 5-7 5-12 0-3-1-5-3-6-2 2-6 2-8 0z"/><path d="M12 8v6"/></svg>""",
+        "title": "משפחת שן ורגל",
+        "summary": "הגמרא מזהה את שן ורגל בפסוקים, מבררת את מאפייניהן ותולדותיהן, ומעמיקה בשאלה האם כל תולדה מקבלת בדיוק את דין האב שלה.",
+        "icon": """<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 3.5C3 4.5 2.5 6.3 2.8 8.5c.5 3.8 2 7.2 4.2 10 .8-1.5 1.5-3.3 1.8-5.3.3 2 1 3.8 1.8 5.3 2.2-2.8 3.7-6.2 4.2-10 .3-2.2-.2-4-1.7-5-1.7 1.2-6.9 1.2-8.6 0Z"/><path d="M17.2 7.5c1.6.1 2.9.8 3.6 2.1.7 1.4.4 3-.8 4.2-.9.9-2.1 1.4-3.4 1.4h-1.2c-1.2 0-2.2.8-2.5 2l-.4 1.8"/><path d="M18 5.2v2.3M20.6 6.2l-1.3 1.8M22 8.7l-2.2.7"/></svg>""",
     },
     "bor": {
         "title": "משפחת בור",
@@ -316,9 +316,6 @@ def inline_markdown(text: str, glossary: dict[str, GlossaryEntry] | None = None)
         placeholders.append(value)
         return f"\u0000{len(placeholders)-1}\u0000"
 
-    # Glossary markers are explicit only:
-    # דְּאִיכָּא{8} -> span with tooltip.
-    # A word without {ID} is never linked automatically, even if it exists in the glossary.
     glossary_pattern = re.compile(r"([^\s{}<>()[\],.;:!?״\"']+)\{(\d+)\}")
 
     text = glossary_pattern.sub(
@@ -768,13 +765,6 @@ def render_lesson_page(lesson: Lesson, next_lesson: Lesson | None = None) -> str
 
 
 def lesson_start_location(meta: dict[str, str]) -> tuple[str, str]:
-    """Return the conventional daf/amud marker for the lesson's starting point.
-
-    Examples:
-    daf ב, amud א -> ב.
-    daf ב, amud ב -> ב:
-    daf ב, amud א-ב -> ב.  (the lesson starts on amud א)
-    """
     daf = meta.get("daf", "").strip()
     amud = meta.get("amud", "").strip()
 
@@ -936,7 +926,6 @@ def load_lessons(source_dir: Path, glossary: dict[str, GlossaryEntry]) -> list[L
 
 
 def plain_text_from_html(value: str) -> str:
-    """Return compact visible text suitable for the client-side search index."""
     value = re.sub(r"<script\b[^>]*>.*?</script>", " ", value, flags=re.IGNORECASE | re.DOTALL)
     value = re.sub(r"<style\b[^>]*>.*?</style>", " ", value, flags=re.IGNORECASE | re.DOTALL)
     value = re.sub(r"<button\b[^>]*>.*?</button>", " ", value, flags=re.IGNORECASE | re.DOTALL)
