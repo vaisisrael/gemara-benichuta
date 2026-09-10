@@ -376,6 +376,53 @@ def split_blocks(markdown: str) -> list[str]:
     return blocks
 
 
+def lesson_audio_file(lesson_number: str) -> Path:
+    return ROOT / "assets" / "audio" / "lessons" / f"{lesson_number}.mp3"
+
+
+def lesson_has_audio(lesson_number: str) -> bool:
+    return bool(lesson_number) and lesson_audio_file(lesson_number).is_file()
+
+
+def lesson_audio_url(lesson_number: str) -> str:
+    safe_number = html.escape(lesson_number, quote=True)
+    return f"{BASE_PATH}/assets/audio/lessons/{safe_number}.mp3"
+
+
+def lesson_audio_player_html(meta: dict[str, str]) -> str:
+    lesson_number = meta.get("lesson_number", "").strip()
+    if not lesson_has_audio(lesson_number):
+        return ""
+
+    audio_url = lesson_audio_url(lesson_number)
+    return f'''<section class="lesson-audio" aria-label="האזנה לשיעור">
+  <div class="lesson-audio-text">
+    <strong>🎧 האזנה לשיעור</strong>
+    <p>אפשר להאזין לגרסה קולית מודרכת של השיעור.</p>
+  </div>
+  <audio controls preload="metadata">
+    <source src="{audio_url}" type="audio/mpeg">
+    הדפדפן שלכם אינו תומך בנגן שמע.
+  </audio>
+</section>'''
+
+
+def lesson_index_audio_html(lesson_number: str) -> str:
+    if not lesson_has_audio(lesson_number):
+        return ""
+
+    audio_url = lesson_audio_url(lesson_number)
+    return f'''<details class="lesson-row-audio">
+  <summary>🎧 האזנה</summary>
+  <div class="lesson-row-audio-player">
+    <audio controls preload="metadata">
+      <source src="{audio_url}" type="audio/mpeg">
+      הדפדפן שלכם אינו תומך בנגן שמע.
+    </audio>
+  </div>
+</details>'''
+
+
 def render_daf_cards(meta: dict[str, str], glossary: dict[str, GlossaryEntry]) -> str:
     cards: list[str] = []
 
@@ -451,6 +498,9 @@ def render_markdown(
                 continue
             if not title_seen:
                 out.append(f'<h1 id="lesson-top">{inline_markdown(text, glossary)}</h1>')
+                audio_player = lesson_audio_player_html(meta)
+                if audio_player:
+                    out.append(audio_player)
                 toc.append(("lesson-top", text))
                 title_seen = True
                 continue
@@ -837,8 +887,7 @@ def render_lessons_index(lessons: list[Lesson]) -> str:
   </span>
 </span>'''
 
-        rows.append(
-            f'''<a class="lesson-row" data-lesson-number="{number}" href="{BASE_PATH}/he/lessons/{slug}.html">
+        row_html = f'''<a class="lesson-row" data-lesson-number="{number}" href="{BASE_PATH}/he/lessons/{slug}.html">
   <span class="lesson-number">
     <span class="lesson-number-value">{number}</span>
     {daf_html}
@@ -849,7 +898,17 @@ def render_lessons_index(lessons: list[Lesson]) -> str:
   </span>
   <span class="lesson-desc">{desc}</span>
 </a>'''
-        )
+        audio_html = lesson_index_audio_html(raw_number)
+
+        if audio_html:
+            rows.append(
+                f'''<div class="lesson-list-item">
+  {row_html}
+  {audio_html}
+</div>'''
+            )
+        else:
+            rows.append(row_html)
 
     rows_html = "\n".join(rows)
 
