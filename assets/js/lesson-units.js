@@ -48,50 +48,32 @@
   style.textContent = `
     .lesson-list-item{position:relative}
     .lesson-list-item:has(.lesson-row[hidden]){display:none}
-    .lesson-list-item:has(.lesson-row-audio) .lesson-title-line{padding-inline-end:44px}
 
     .lesson-row-audio{margin:0;font:inherit}
-    .lesson-row-audio > summary{
-      position:absolute;
-      z-index:3;
-      inset-inline-end:22px;
-      top:22px;
+    .lesson-row-audio > summary{display:none}
+
+    .lesson-audio-icon{
+      flex:0 0 auto;
       display:grid;
       place-items:center;
       width:34px;
       height:34px;
-      margin:0;
-      padding:0;
       border:1px solid rgba(201,168,106,.75);
       border-radius:999px;
       background:rgba(201,168,106,.16);
       color:var(--brand-dark);
       cursor:pointer;
-      list-style:none;
       font:inherit;
       font-family:inherit;
+      font-size:18px;
       line-height:1;
     }
-    .lesson-row-audio > summary::-webkit-details-marker{display:none}
-    .lesson-row-audio > summary::marker{content:""}
-    .lesson-row-audio > summary:hover{background:rgba(201,168,106,.26)}
-    .lesson-row-audio > summary:focus-visible{
+    .lesson-audio-icon:hover{background:rgba(201,168,106,.26)}
+    .lesson-audio-icon:focus-visible{
       outline:3px solid rgba(201,168,106,.55);
       outline-offset:3px;
     }
-    .lesson-row-audio[open] > summary{background:var(--box)}
-
-    .lesson-audio-sr{
-      position:absolute;
-      width:1px;
-      height:1px;
-      padding:0;
-      margin:-1px;
-      overflow:hidden;
-      clip:rect(0,0,0,0);
-      white-space:nowrap;
-      border:0;
-    }
+    .lesson-audio-icon[aria-expanded="true"]{background:var(--box)}
 
     .lesson-row-audio-player{
       margin-top:-18px;
@@ -115,12 +97,10 @@
     }
 
     @media (max-width:850px){
-      .lesson-list-item:has(.lesson-row-audio) .lesson-title-line{padding-inline-end:40px}
-      .lesson-row-audio > summary{
-        inset-inline-end:18px;
-        top:18px;
+      .lesson-audio-icon{
         width:32px;
         height:32px;
+        font-size:17px;
       }
       .lesson-row-audio-player{
         margin-top:-14px;
@@ -131,11 +111,43 @@
   document.head.append(style);
 
   audioDetails.forEach((details) => {
-    const summary = details.querySelector(':scope > summary');
-    if (!summary) return;
+    const item = details.closest('.lesson-list-item');
+    const titleLine = item?.querySelector('.lesson-title-line');
+    if (!item || !titleLine) return;
 
-    summary.innerHTML = '<span aria-hidden="true">🎧</span><span class="lesson-audio-sr">האזנה לשיעור</span>';
-    summary.setAttribute('title', 'האזנה לשיעור');
-    summary.setAttribute('aria-label', 'האזנה לשיעור');
+    const icon = document.createElement('span');
+    icon.className = 'lesson-audio-icon';
+    icon.setAttribute('role', 'button');
+    icon.setAttribute('tabindex', '0');
+    icon.setAttribute('aria-label', 'האזנה לשיעור');
+    icon.setAttribute('title', 'האזנה לשיעור');
+    icon.setAttribute('aria-expanded', 'false');
+    icon.textContent = '🎧';
+    titleLine.append(icon);
+
+    function toggleAudio(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      const willOpen = !details.open;
+      details.open = willOpen;
+      icon.setAttribute('aria-expanded', String(willOpen));
+    }
+
+    icon.addEventListener('click', toggleAudio);
+    icon.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        toggleAudio(event);
+      } else if (event.key === 'Escape' && details.open) {
+        event.preventDefault();
+        event.stopPropagation();
+        details.open = false;
+        icon.setAttribute('aria-expanded', 'false');
+        icon.blur();
+      }
+    });
+
+    details.addEventListener('toggle', () => {
+      icon.setAttribute('aria-expanded', String(details.open));
+    });
   });
 })();
