@@ -691,7 +691,7 @@ def render_lesson_bottom_nav(next_lesson: Lesson | None) -> str:
         next_link = "<span>השיעור הבא יתווסף בהמשך</span>"
 
     return f'''<nav class="lesson-bottom-nav" aria-label="ניווט בין שיעורים">
-  <a href="{BASE_PATH}/he/lessons/">לכל שיעורי הסדרה</a>
+  <a href="{BASE_PATH}/he/lessons/">לכל שיעורי התוכנית</a>
   {next_link}
 </nav>'''
 
@@ -942,12 +942,12 @@ def render_lessons_index(lessons: list[Lesson]) -> str:
     else:
         progress_html = ""
 
-    return f'''{html_head("כל שיעורי הסדרה")}
+    return f'''{html_head("תוכנית המתחילים — 32 שיעורים")}
 <body>
 {site_header("שיעורים")}
 <main id="main-content" class="page narrow-page" tabindex="-1">
-  <h1>כל שיעורי הסדרה במסכת בבא קמא</h1>
-  <p class="lead small">השיעורים מוצגים לפי סדר לימודי. מומלץ להתחיל מן השיעור הראשון.</p>
+  <h1>תוכנית המתחילים — 32 שיעורים</h1>
+  <p class="lead small">מסלול מסודר מן השיעור הראשון ועד לסיום התוכנית. כל שיעור קצר, נלמד מן המקור, ומוסיף עוד שלב בהיכרות עם דרך החשיבה של הגמרא.</p>
   {progress_html}
   <section class="lesson-search" id="lesson-search" data-lesson-search aria-label="חיפוש בשיעורים">
     <label for="lesson-search-input">חיפוש בשיעורים</label>
