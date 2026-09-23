@@ -822,12 +822,12 @@ def lesson_start_location(meta: dict[str, str]) -> tuple[str, str]:
         return "", ""
 
     start_amud = re.split(r"[-–—־]", amud, maxsplit=1)[0].strip()
-    punctuation = "." if start_amud == "א" else ":" if start_amud == "ב" else ""
+    amud_abbrev = "ע״א" if start_amud == "א" else "ע״ב" if start_amud == "ב" else ""
 
-    if not punctuation:
+    if not amud_abbrev:
         return "", ""
 
-    marker = f"{daf}{punctuation}"
+    marker = f"דף {daf} {amud_abbrev}"
     accessible = f"דף {daf} עמוד {start_amud}"
     return marker, accessible
 
