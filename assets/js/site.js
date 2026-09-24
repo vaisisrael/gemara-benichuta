@@ -538,6 +538,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function removeLastCompletedLesson() {
+    try {
+      window.localStorage.removeItem(LESSON_PROGRESS_KEY);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
   function setCompletionButtonState(container, bookmarked) {
     const button = container.querySelector('[data-complete-lesson]');
     const status = container.querySelector('[data-completion-status]');
@@ -547,13 +556,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     container.classList.toggle('is-complete', bookmarked);
-    button.disabled = bookmarked;
+    button.disabled = false;
 
     if (bookmarked) {
-      button.textContent = '🔖 הסימנייה שמורה כאן';
+      button.textContent = '🔖 הסימנייה שמורה כאן · הסרה';
+      button.setAttribute('aria-label', 'הסרת הסימנייה מהשיעור');
       status.textContent = '';
     } else {
       button.textContent = '🔖 לשמור סימנייה';
+      button.setAttribute('aria-label', 'שמירת סימנייה לשיעור');
       status.textContent = '';
     }
   }
@@ -574,6 +585,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (status) {
       status.textContent = 'הסימנייה נשמרה.';
+    }
+  }
+
+  function removeLessonBookmark(container) {
+    const removed = removeLastCompletedLesson();
+    const status = container.querySelector('[data-completion-status]');
+
+    if (!removed) {
+      if (status) {
+        status.textContent = 'לא היה אפשר להסיר את הסימנייה מהדפדפן.';
+      }
+
+      return;
+    }
+
+    setCompletionButtonState(container, false);
+
+    if (status) {
+      status.textContent = 'הסימנייה הוסרה.';
     }
   }
 
@@ -605,10 +635,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (completeButton && currentLesson !== null) {
       completeButton.addEventListener('click', () => {
+        const bookmarkedLesson = getLastCompletedLesson();
+
         /*
-         * לחיצה מפורשת על הכפתור שומרת תמיד את השיעור הנוכחי כסימנייה.
-         * אין שאלה ואין בדיקה אם מדובר בשיעור מוקדם יותר.
+         * אם הסימנייה כבר שמורה בשיעור הנוכחי, לחיצה נוספת מסירה אותה.
+         * אחרת, הלחיצה שומרת את השיעור הנוכחי כסימנייה ומחליפה סימנייה קודמת.
          */
+        if (bookmarkedLesson === currentLesson) {
+          removeLessonBookmark(completionContainer);
+          return;
+        }
+
         markLessonAsCompleted(
           completionContainer,
           currentLesson
